@@ -1,0 +1,314 @@
+openapi: 3.0.3
+info:
+  title: notification-service
+  version: 1.0.0
+  description: 'Напоминания о лекарствах. У пользователя одно текущее устройство. Подготовка заданий не обращается к FCM и не требует
+    наличия токена; без токена отправка отмечается FAILED. Все публичные вызовы требуют JWT Keycloak; userId берётся из sub. Доступ
+    к питомцу проверяется через pet-service. Публичные изменения требуют Idempotency-Key: ключ связан с sub, методом, путём и телом;
+    результат хранится 24 часа. Повтор завершённого запроса возвращает прежний результат, другое тело — 409. Для активации возвращается
+    прежняя operationId; для ещё выполняющегося обычного запроса — 409 с code=IN_PROGRESS.'
+servers:
+- {url: 'https://api.pet-care.example', description: API Gateway}
+security:
+- userJwt: []
+tags:
+- {name: public, description: Клиент через Gateway}
+- {name: internal, description: Только сервисы внутренней сети}
+paths:
+  /api/v1/device:
+    put:
+      tags:
+      - public
+      summary: Зарегистрировать текущее устройство
+      description: 'Upsert по sub: заменяет предыдущий токен этого пользователя. Токен, закреплённый за другим пользователем, даёт 409.
+        Регистрация устройства не требует petId.'
+      operationId: notification_put_api_v1_device
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Device'}
+              example: {registered: true}
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
+      parameters:
+      - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RegisterDevice'}
+            example: {pushToken: example-fcm-token}
+  /api/v1/notifications:
+    get:
+      tags:
+      - public
+      summary: Мои напоминания
+      description: Только задания текущего владельца; PREPARED скрыты. Сортировка scheduledAt, occurrenceId. SENT означает принятие
+        FCM, не доставку/прочтение. Перед отправкой повторно проверяются владелец и статус приёма; просрочка свыше часа отменяет отправку.
+        Возвращаются только данные владельца. page начинается с 1, size — 1–100, за пределами списка items=[].
+      operationId: notification_get_api_v1_notifications
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReminderPage'}
+              example:
+                items:
+                - {occurrenceId: 11111111-1111-4111-8111-111111111111, petId: 11111111-1111-4111-8111-111111111111, scheduledAt: '2026-11-01T08:00:00Z',
+                  status: PENDING, lastError: null}
+                page: 1
+                size: 20
+                total: 1
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '503': {$ref: '#/components/responses/Error503'}
+      parameters:
+      - {$ref: '#/components/parameters/PetId'}
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
+      x-codeSamples:
+      - lang: Shell
+        source: 'curl -X GET ''https://api.pet-care.example/api/v1/notifications?petId=11111111-1111-4111-8111-111111111111&page=1&size=20''
+          -H ''Authorization: Bearer <JWT>'''
+  /internal/v1/courses/{activationId}/reminders:
+    put:
+      tags:
+      - internal
+      summary: Подготовить напоминания
+      description: Только health-service. Тело сохраняется атомарно вместе с activationId в состоянии PREPARED. Повтор с тем же телом
+        — 204; другое тело или сохранённая отмена — 409. occurrenceId уникальны внутри снимка; ключ подготовленной записи — activationId
+        + occurrenceId. Данные не видны пользователю и не отправляются до health.course.activated.
+      operationId: notification_put_internal_v1_courses_activationId_reminders
+      responses:
+        '204': {description: 'Выполнено, без тела'}
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
+      parameters:
+      - {$ref: '#/components/parameters/ActivationId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CourseSnapshot'}
+            example:
+              courseId: 11111111-1111-4111-8111-111111111111
+              petId: 11111111-1111-4111-8111-111111111111
+              ownerId: 11111111-1111-4111-8111-111111111111
+              title: Приём лекарства
+              occurrences:
+              - {id: 11111111-1111-4111-8111-111111111111, scheduledAt: '2026-11-01T08:00:00Z'}
+      security:
+      - serviceJwt: []
+      servers:
+      - {url: 'http://notification-service:8080'}
+      x-allowed-callers:
+      - health-service
+    delete:
+      tags:
+      - internal
+      summary: Компенсировать подготовку
+      description: 'Только health-service. Для PREPARED удаляется проекция / отменяются задания; в БД сохраняется отметка отмены activationId,
+        даже если данных не было. Повторы — 204. Запоздавший PUT отклоняется. Уже применённая активация — 409: активный курс этой операцией
+        не откатывается.'
+      operationId: notification_delete_internal_v1_courses_activationId_reminders
+      responses:
+        '204': {description: 'Выполнено, без тела'}
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
+      parameters:
+      - {$ref: '#/components/parameters/ActivationId'}
+      security:
+      - serviceJwt: []
+      servers:
+      - {url: 'http://notification-service:8080'}
+      x-allowed-callers:
+      - health-service
+      x-codeSamples:
+      - lang: Shell
+        source: 'curl -X DELETE ''http://notification-service:8080/internal/v1/courses/11111111-1111-4111-8111-111111111111/reminders''
+          -H ''Authorization: Bearer <JWT>'''
+components:
+  securitySchemes:
+    userJwt: {type: http, scheme: bearer, bearerFormat: JWT, description: 'Проверяются подпись, issuer, audience и exp JWT пользователя.'}
+    serviceJwt: {type: http, scheme: bearer, bearerFormat: JWT, description: Сервисный токен Keycloak с audience получателя. Проверяются
+        client_id и разрешённый вызывающий сервис.}
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: UUID запроса; один ключ с другим телом даёт 409.
+      schema: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+    PetId:
+      name: petId
+      in: query
+      required: true
+      description: Питомец текущего владельца.
+      schema: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+    Page:
+      name: page
+      in: query
+      description: Номер страницы.
+      schema: {type: integer, example: 1, minimum: 1, default: 1}
+    Size:
+      name: size
+      in: query
+      description: Размер страницы.
+      schema: {type: integer, example: 20, minimum: 1, maximum: 100, default: 20}
+    ActivationId:
+      name: activationId
+      in: path
+      required: true
+      description: UUID попытки активации, одинаковый для обоих участников.
+      schema: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+  responses:
+    Error400:
+      description: Некорректные параметры или тело запроса
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          example: {type: 'about:blank', title: Некорректные параметры или тело запроса, status: 400, detail: Некорректные параметры
+              или тело запроса., code: BAD_REQUEST}
+    Error401:
+      description: Недействительный или отсутствующий токен
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          example: {type: 'about:blank', title: Недействительный или отсутствующий токен, status: 401, detail: Недействительный или
+              отсутствующий токен., code: UNAUTHENTICATED}
+    Error403:
+      description: Питомец не принадлежит пользователю или сервис не допущен
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          example:
+            type: about:blank
+            title: Питомец не принадлежит пользователю или сервис не допущен
+            status: 403
+            detail: Питомец не принадлежит пользователю или сервис не допущен.
+            code: FORBIDDEN
+    Error409:
+      description: Конфликт состояния или ключа идемпотентности
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          example: {type: 'about:blank', title: Конфликт состояния или ключа идемпотентности, status: 409, detail: Конфликт состояния
+              или ключа идемпотентности., code: CONFLICT}
+    Error503:
+      description: Зависимость временно недоступна
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          example: {type: 'about:blank', title: Зависимость временно недоступна, status: 503, detail: Зависимость временно недоступна.,
+            code: UNAVAILABLE}
+  schemas:
+    Problem:
+      type: object
+      additionalProperties: false
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - code
+      properties:
+        type: {type: string, example: 'about:blank', format: uri}
+        title: {type: string, example: Ошибка запроса}
+        status: {type: integer, example: 400, minimum: 400, maximum: 599}
+        detail: {type: string, example: Проверьте параметры запроса.}
+        code: {type: string, example: BAD_REQUEST}
+    RegisterDevice:
+      type: object
+      additionalProperties: false
+      required:
+      - pushToken
+      properties:
+        pushToken: {type: string, example: example-fcm-token, minLength: 1, maxLength: 4096}
+    Device:
+      type: object
+      additionalProperties: false
+      required:
+      - registered
+      properties:
+        registered: {type: boolean, example: true}
+    Reminder:
+      type: object
+      additionalProperties: false
+      required:
+      - occurrenceId
+      - petId
+      - scheduledAt
+      - status
+      - lastError
+      properties:
+        occurrenceId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        petId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        scheduledAt: {type: string, example: '2026-11-01T08:00:00Z', format: date-time}
+        status:
+          type: string
+          example: PENDING
+          enum:
+          - PENDING
+          - SENT
+          - FAILED
+          - CANCELLED
+        lastError: {type: string, example: null, nullable: true}
+    ReminderPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - page
+      - size
+      - total
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Reminder'}
+        page: {type: integer, example: 1, minimum: 1}
+        size: {type: integer, example: 20, minimum: 1, maximum: 100}
+        total: {type: integer, example: 1, minimum: 0}
+    ScheduledOccurrence:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - scheduledAt
+      properties:
+        id: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        scheduledAt: {type: string, example: '2026-11-01T08:00:00Z', format: date-time}
+    CourseSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+      - courseId
+      - petId
+      - ownerId
+      - title
+      - occurrences
+      properties:
+        courseId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        petId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        ownerId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        title: {type: string, example: Приём лекарства}
+        occurrences:
+          type: array
+          items: {$ref: '#/components/schemas/ScheduledOccurrence'}
+          minItems: 1
+          maxItems: 60
+x-subscriptions:
+- {eventType: health.course.activated, schema: health-service.yaml#/components/schemas/CourseActivated}
+- {eventType: health.occurrence.completed, schema: health-service.yaml#/components/schemas/OccurrenceCompleted}

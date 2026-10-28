@@ -1,0 +1,665 @@
+openapi: 3.0.3
+info:
+  title: health-service
+  version: 1.0.0
+  description: 'Курсы лечения, факты приёмов и координатор саги. Препарат и дозу вводит пользователь. Сервис не назначает лечение. Все
+    публичные вызовы требуют JWT Keycloak; userId берётся из sub. Доступ к питомцу проверяется через pet-service. Публичные изменения
+    требуют Idempotency-Key: ключ связан с sub, методом, путём и телом; результат хранится 24 часа. Повтор завершённого запроса возвращает
+    прежний результат, другое тело — 409. Для активации возвращается прежняя operationId; для ещё выполняющегося обычного запроса —
+    409 с code=IN_PROGRESS.'
+servers:
+- {url: 'https://api.pet-care.example', description: API Gateway}
+security:
+- userJwt: []
+tags:
+- {name: public, description: Клиент через Gateway}
+- {name: internal, description: Только сервисы внутренней сети}
+paths:
+  /api/v1/health/courses:
+    post:
+      tags:
+      - public
+      summary: Создать курс
+      description: 'Создаёт DRAFT. firstDoseAt должен быть в будущем. Расписание конечное: firstDoseAt + i × intervalHours для i от
+        0 до doseCount−1. Время в UTC; интервал означает точное число часов. Доза и расписание после создания не редактируются. UUID
+        приёмов сохраняются в БД и не меняются при повторах подготовки.'
+      operationId: health_post_api_v1_health_courses
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Course'}
+              example:
+                id: 11111111-1111-4111-8111-111111111111
+                petId: 11111111-1111-4111-8111-111111111111
+                medication: Препарат из назначения
+                dose: Доза по назначению ветеринара
+                firstDoseAt: '2026-11-01T08:00:00Z'
+                intervalHours: 24
+                doseCount: 7
+                status: DRAFT
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
+      parameters:
+      - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateCourse'}
+            example:
+              petId: 11111111-1111-4111-8111-111111111111
+              medication: Препарат из назначения
+              dose: Доза по назначению ветеринара
+              firstDoseAt: '2026-11-01T08:00:00Z'
+              intervalHours: 24
+              doseCount: 7
+    get:
+      tags:
+      - public
+      summary: Курсы питомца
+      description: Сортировка id ASC. Возвращаются только данные владельца. page начинается с 1, size — 1–100, за пределами списка items=[].
+      operationId: health_get_api_v1_health_courses
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CoursePage'}
+              example:
+                items:
+                - id: 11111111-1111-4111-8111-111111111111
+                  petId: 11111111-1111-4111-8111-111111111111
+                  medication: Препарат из назначения
+                  dose: Доза по назначению ветеринара
+                  firstDoseAt: '2026-11-01T08:00:00Z'
+                  intervalHours: 24
+                  doseCount: 7
+                  status: DRAFT
+                page: 1
+                size: 20
+                total: 1
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '503': {$ref: '#/components/responses/Error503'}
+      parameters:
+      - {$ref: '#/components/parameters/PetId'}
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
+      x-codeSamples:
+      - lang: Shell
+        source: 'curl -X GET ''https://api.pet-care.example/api/v1/health/courses?petId=11111111-1111-4111-8111-111111111111&page=1&size=20''
+          -H ''Authorization: Bearer <JWT>'''
+  /api/v1/health/courses/{id}:
+    get:
+      tags:
+      - public
+      summary: Получить курс
+      description: Только владелец питомца курса.
+      operationId: health_get_api_v1_health_courses_id
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Course'}
+              example:
+                id: 11111111-1111-4111-8111-111111111111
+                petId: 11111111-1111-4111-8111-111111111111
+                medication: Препарат из назначения
+                dose: Доза по назначению ветеринара
+                firstDoseAt: '2026-11-01T08:00:00Z'
+                intervalHours: 24
+                doseCount: 7
+                status: DRAFT
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '503': {$ref: '#/components/responses/Error503'}
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      x-codeSamples:
+      - {lang: Shell, source: 'curl -X GET ''https://api.pet-care.example/api/v1/health/courses/11111111-1111-4111-8111-111111111111''
+          -H ''Authorization: Bearer <JWT>'''}
+  /api/v1/health/courses/{id}/activations:
+    post:
+      tags:
+      - public
+      summary: Запустить курс
+      description: Без тела. Только DRAFT с первым приёмом в будущем; иначе 409. Одна незавершённая попытка на курс. Сохраняет операцию
+        и PREPARING, запускает фонового координатора. После подготовки проекции и напоминаний фиксирует ACTIVE и outbox одной транзакцией.
+        При отказе до фиксации компенсирует обоих участников; курс возвращается в DRAFT только после обоих DELETE. Повтор ключа возвращает
+        ту же operationId; новая попытка после FAILED требует нового ключа.
+      operationId: health_post_api_v1_health_courses_id_activations
+      responses:
+        '202':
+          description: Активация принята
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Operation'}
+              example:
+                operationId: 11111111-1111-4111-8111-111111111111
+                activationId: 11111111-1111-4111-8111-111111111111
+                courseId: 11111111-1111-4111-8111-111111111111
+                status: PREPARING
+                reason: null
+          headers:
+            Location:
+              description: Путь проверки операции через Gateway.
+              schema: {type: string, example: /api/v1/health/operations/11111111-1111-4111-8111-111111111111}
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      - {$ref: '#/components/parameters/IdempotencyKey'}
+      x-codeSamples:
+      - lang: Shell
+        source: 'curl -X POST ''https://api.pet-care.example/api/v1/health/courses/11111111-1111-4111-8111-111111111111/activations''
+          -H ''Authorization: Bearer <JWT>'' -H ''Idempotency-Key: 11111111-1111-4111-8111-111111111111'''
+  /api/v1/health/operations/{id}:
+    get:
+      tags:
+      - public
+      summary: Проверить активацию
+      description: Только владелец курса. SUCCEEDED означает фиксацию ACTIVE и события, а не подтверждение доставки всем подписчикам.
+        FAILED означает, что обе компенсации завершены. Во время COMPENSATING новая активация запрещена.
+      operationId: health_get_api_v1_health_operations_id
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Operation'}
+              example:
+                operationId: 11111111-1111-4111-8111-111111111111
+                activationId: 11111111-1111-4111-8111-111111111111
+                courseId: 11111111-1111-4111-8111-111111111111
+                status: PREPARING
+                reason: null
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '503': {$ref: '#/components/responses/Error503'}
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      x-codeSamples:
+      - {lang: Shell, source: 'curl -X GET ''https://api.pet-care.example/api/v1/health/operations/11111111-1111-4111-8111-111111111111''
+          -H ''Authorization: Bearer <JWT>'''}
+  /api/v1/health/occurrences:
+    get:
+      tags:
+      - public
+      summary: Приёмы лекарства
+      description: Только приёмы ACTIVE-курсов. Сортировка scheduledAt ASC, id ASC. Прошедшее время без отметки сохраняет PENDING. Возвращаются
+        только данные владельца. page начинается с 1, size — 1–100, за пределами списка items=[].
+      operationId: health_get_api_v1_health_occurrences
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/OccurrencePage'}
+              example:
+                items:
+                - id: 11111111-1111-4111-8111-111111111111
+                  courseId: 11111111-1111-4111-8111-111111111111
+                  petId: 11111111-1111-4111-8111-111111111111
+                  scheduledAt: '2026-11-01T08:00:00Z'
+                  dose: Доза по назначению ветеринара
+                  status: PENDING
+                  recordedAt: null
+                page: 1
+                size: 20
+                total: 1
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '503': {$ref: '#/components/responses/Error503'}
+      parameters:
+      - {$ref: '#/components/parameters/PetId'}
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
+      x-codeSamples:
+      - lang: Shell
+        source: 'curl -X GET ''https://api.pet-care.example/api/v1/health/occurrences?petId=11111111-1111-4111-8111-111111111111&page=1&size=20''
+          -H ''Authorization: Bearer <JWT>'''
+  /api/v1/health/occurrences/{id}/completion:
+    post:
+      tags:
+      - public
+      summary: Отметить приём или пропуск
+      description: 'Только владелец и ACTIVE-курс. Одна отметка: PENDING → TAKEN либо SKIPPED; повтор с другим ключом — 409. recordedAt
+        задаёт сервер. Изменение факта и outbox сохраняются атомарно. Приём не становится пропущенным автоматически.'
+      operationId: health_post_api_v1_health_occurrences_id_completion
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Occurrence'}
+              example:
+                id: 11111111-1111-4111-8111-111111111111
+                courseId: 11111111-1111-4111-8111-111111111111
+                petId: 11111111-1111-4111-8111-111111111111
+                scheduledAt: '2026-11-01T08:00:00Z'
+                dose: Доза по назначению ветеринара
+                status: TAKEN
+                recordedAt: '2026-11-01T08:00:00Z'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MarkOccurrence'}
+            example: {status: TAKEN}
+  /internal/v1/health/occurrences/{id}:
+    get:
+      tags:
+      - internal
+      summary: Проверить приём перед push
+      description: Только notification-service для существующего задания. Возвращает приём ACTIVE-курса; неизвестный или неактивный
+        — 404. PENDING разрешает дальнейшую проверку отправки; TAKEN/SKIPPED отменяют задание.
+      operationId: health_get_internal_v1_health_occurrences_id
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Occurrence'}
+              example:
+                id: 11111111-1111-4111-8111-111111111111
+                courseId: 11111111-1111-4111-8111-111111111111
+                petId: 11111111-1111-4111-8111-111111111111
+                scheduledAt: '2026-11-01T08:00:00Z'
+                dose: Доза по назначению ветеринара
+                status: PENDING
+                recordedAt: null
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '503': {$ref: '#/components/responses/Error503'}
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      security:
+      - serviceJwt: []
+      servers:
+      - {url: 'http://health-service:8080'}
+      x-allowed-callers:
+      - notification-service
+      x-codeSamples:
+      - {lang: Shell, source: 'curl -X GET ''http://health-service:8080/internal/v1/health/occurrences/11111111-1111-4111-8111-111111111111''
+          -H ''Authorization: Bearer <JWT>'''}
+components:
+  securitySchemes:
+    userJwt: {type: http, scheme: bearer, bearerFormat: JWT, description: 'Проверяются подпись, issuer, audience и exp JWT пользователя.'}
+    serviceJwt: {type: http, scheme: bearer, bearerFormat: JWT, description: Сервисный токен Keycloak с audience получателя. Проверяются
+        client_id и разрешённый вызывающий сервис.}
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: UUID запроса; один ключ с другим телом даёт 409.
+      schema: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+    PetId:
+      name: petId
+      in: query
+      required: true
+      description: Питомец текущего владельца.
+      schema: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+    Page:
+      name: page
+      in: query
+      description: Номер страницы.
+      schema: {type: integer, example: 1, minimum: 1, default: 1}
+    Size:
+      name: size
+      in: query
+      description: Размер страницы.
+      schema: {type: integer, example: 20, minimum: 1, maximum: 100, default: 20}
+    Id:
+      name: id
+      in: path
+      required: true
+      description: UUID ресурса.
+      schema: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+  responses:
+    Error400:
+      description: Некорректные параметры или тело запроса
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          example: {type: 'about:blank', title: Некорректные параметры или тело запроса, status: 400, detail: Некорректные параметры
+              или тело запроса., code: BAD_REQUEST}
+    Error401:
+      description: Недействительный или отсутствующий токен
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          example: {type: 'about:blank', title: Недействительный или отсутствующий токен, status: 401, detail: Недействительный или
+              отсутствующий токен., code: UNAUTHENTICATED}
+    Error403:
+      description: Питомец не принадлежит пользователю или сервис не допущен
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          example:
+            type: about:blank
+            title: Питомец не принадлежит пользователю или сервис не допущен
+            status: 403
+            detail: Питомец не принадлежит пользователю или сервис не допущен.
+            code: FORBIDDEN
+    Error409:
+      description: Конфликт состояния или ключа идемпотентности
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          example: {type: 'about:blank', title: Конфликт состояния или ключа идемпотентности, status: 409, detail: Конфликт состояния
+              или ключа идемпотентности., code: CONFLICT}
+    Error503:
+      description: Зависимость временно недоступна
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          example: {type: 'about:blank', title: Зависимость временно недоступна, status: 503, detail: Зависимость временно недоступна.,
+            code: UNAVAILABLE}
+    Error404:
+      description: Ресурс не найден
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          example: {type: 'about:blank', title: Ресурс не найден, status: 404, detail: Ресурс не найден., code: NOT_FOUND}
+  schemas:
+    Problem:
+      type: object
+      additionalProperties: false
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - code
+      properties:
+        type: {type: string, example: 'about:blank', format: uri}
+        title: {type: string, example: Ошибка запроса}
+        status: {type: integer, example: 400, minimum: 400, maximum: 599}
+        detail: {type: string, example: Проверьте параметры запроса.}
+        code: {type: string, example: BAD_REQUEST}
+    CreateCourse:
+      type: object
+      additionalProperties: false
+      required:
+      - petId
+      - medication
+      - dose
+      - firstDoseAt
+      - intervalHours
+      - doseCount
+      properties:
+        petId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        medication: {type: string, example: Препарат из назначения, minLength: 1, maxLength: 200}
+        dose: {type: string, example: Доза по назначению ветеринара, minLength: 1, maxLength: 200}
+        firstDoseAt: {type: string, example: '2026-11-01T08:00:00Z', format: date-time}
+        intervalHours: {type: integer, example: 24, minimum: 1, maximum: 168}
+        doseCount: {type: integer, example: 7, minimum: 1, maximum: 60}
+    Course:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - petId
+      - medication
+      - dose
+      - firstDoseAt
+      - intervalHours
+      - doseCount
+      - status
+      properties:
+        id: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        petId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        medication: {type: string, example: Препарат из назначения, minLength: 1, maxLength: 200}
+        dose: {type: string, example: Доза по назначению ветеринара, minLength: 1, maxLength: 200}
+        firstDoseAt: {type: string, example: '2026-11-01T08:00:00Z', format: date-time}
+        intervalHours: {type: integer, example: 24, minimum: 1, maximum: 168}
+        doseCount: {type: integer, example: 7, minimum: 1, maximum: 60}
+        status:
+          type: string
+          example: DRAFT
+          enum:
+          - DRAFT
+          - PREPARING
+          - ACTIVE
+    CoursePage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - page
+      - size
+      - total
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Course'}
+        page: {type: integer, example: 1, minimum: 1}
+        size: {type: integer, example: 20, minimum: 1, maximum: 100}
+        total: {type: integer, example: 1, minimum: 0}
+    Operation:
+      type: object
+      additionalProperties: false
+      required:
+      - operationId
+      - activationId
+      - courseId
+      - status
+      - reason
+      properties:
+        operationId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        activationId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        courseId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        status:
+          type: string
+          example: PREPARING
+          enum:
+          - PREPARING
+          - SUCCEEDED
+          - COMPENSATING
+          - FAILED
+        reason: {type: string, example: null, nullable: true}
+    Occurrence:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - courseId
+      - petId
+      - scheduledAt
+      - dose
+      - status
+      - recordedAt
+      properties:
+        id: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        courseId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        petId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        scheduledAt: {type: string, example: '2026-11-01T08:00:00Z', format: date-time}
+        dose: {type: string, example: Доза по назначению ветеринара}
+        status:
+          type: string
+          example: PENDING
+          enum:
+          - PENDING
+          - TAKEN
+          - SKIPPED
+        recordedAt: {type: string, example: null, format: date-time, nullable: true}
+    OccurrencePage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - page
+      - size
+      - total
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Occurrence'}
+        page: {type: integer, example: 1, minimum: 1}
+        size: {type: integer, example: 20, minimum: 1, maximum: 100}
+        total: {type: integer, example: 1, minimum: 0}
+    MarkOccurrence:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      properties:
+        status:
+          type: string
+          example: TAKEN
+          enum:
+          - TAKEN
+          - SKIPPED
+    CourseActivated:
+      type: object
+      additionalProperties: false
+      required:
+      - eventId
+      - eventType
+      - occurredAt
+      - schemaVersion
+      - correlationId
+      - payload
+      properties:
+        eventId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        eventType:
+          type: string
+          example: health.course.activated
+          enum:
+          - health.course.activated
+        occurredAt: {type: string, example: '2026-11-01T08:00:00Z', format: date-time}
+        schemaVersion:
+          type: integer
+          example: 1
+          enum:
+          - 1
+        correlationId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        payload:
+          type: object
+          additionalProperties: false
+          required:
+          - activationId
+          - courseId
+          - petId
+          properties:
+            activationId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+            courseId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+            petId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+      description: Уход показывает подготовленную проекцию; уведомления включают только неотменённые задания. Если ранее пришла отметка
+        приёма, её конечный статус сохраняется.
+      x-message:
+        exchange: health.events
+        routingKey: health.course.activated
+        publisher: health-service
+        subscribers:
+        - care-service
+        - notification-service
+        queues:
+        - q.care.health
+        - q.notification.health
+      example:
+        eventId: 11111111-1111-4111-8111-111111111111
+        eventType: health.course.activated
+        occurredAt: '2026-11-01T08:00:00Z'
+        schemaVersion: 1
+        correlationId: 11111111-1111-4111-8111-111111111111
+        payload: {activationId: 11111111-1111-4111-8111-111111111111, courseId: 11111111-1111-4111-8111-111111111111, petId: 11111111-1111-4111-8111-111111111111}
+    OccurrenceCompleted:
+      type: object
+      additionalProperties: false
+      required:
+      - eventId
+      - eventType
+      - occurredAt
+      - schemaVersion
+      - correlationId
+      - payload
+      properties:
+        eventId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        eventType:
+          type: string
+          example: health.occurrence.completed
+          enum:
+          - health.occurrence.completed
+        occurredAt: {type: string, example: '2026-11-01T08:00:00Z', format: date-time}
+        schemaVersion:
+          type: integer
+          example: 1
+          enum:
+          - 1
+        correlationId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        payload:
+          type: object
+          additionalProperties: false
+          required:
+          - occurrenceId
+          - courseId
+          - petId
+          - status
+          - recordedAt
+          properties:
+            occurrenceId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+            courseId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+            petId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+            status:
+              type: string
+              example: TAKEN
+              enum:
+              - TAKEN
+              - SKIPPED
+            recordedAt: {type: string, example: '2026-11-01T08:00:00Z', format: date-time}
+      description: Уход обновляет проекцию, уведомления отменяют задание. Обработка допустима до CourseActivated и не делает скрытую
+        проекцию видимой.
+      x-message:
+        exchange: health.events
+        routingKey: health.occurrence.completed
+        publisher: health-service
+        subscribers:
+        - care-service
+        - notification-service
+        queues:
+        - q.care.health
+        - q.notification.health
+      example:
+        eventId: 11111111-1111-4111-8111-111111111111
+        eventType: health.occurrence.completed
+        occurredAt: '2026-11-01T08:00:00Z'
+        schemaVersion: 1
+        correlationId: 11111111-1111-4111-8111-111111111111
+        payload:
+          occurrenceId: 11111111-1111-4111-8111-111111111111
+          courseId: 11111111-1111-4111-8111-111111111111
+          petId: 11111111-1111-4111-8111-111111111111
+          status: TAKEN
+          recordedAt: '2026-11-01T08:00:00Z'
+x-message-contracts:
+- {$ref: '#/components/schemas/CourseActivated'}
+- {$ref: '#/components/schemas/OccurrenceCompleted'}

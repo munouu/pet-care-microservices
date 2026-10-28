@@ -1,0 +1,284 @@
+openapi: 3.0.3
+info:
+  title: pet-service
+  version: 1.0.0
+  description: 'Профили питомцев и единственный источник владения. Доступ имеет только текущий владелец. В своих публичных операциях
+    сервис проверяет владение локально. Все публичные вызовы требуют JWT Keycloak; userId берётся из sub. Доступ к питомцу проверяется
+    через pet-service. Публичные изменения требуют Idempotency-Key: ключ связан с sub, методом, путём и телом; результат хранится 24
+    часа. Повтор завершённого запроса возвращает прежний результат, другое тело — 409. Для активации возвращается прежняя operationId;
+    для ещё выполняющегося обычного запроса — 409 с code=IN_PROGRESS.'
+servers:
+- {url: 'https://api.pet-care.example', description: API Gateway}
+security:
+- userJwt: []
+tags:
+- {name: public, description: Клиент через Gateway}
+- {name: internal, description: Только сервисы внутренней сети}
+paths:
+  /api/v1/pets:
+    post:
+      tags:
+      - public
+      summary: Создать питомца
+      description: ownerId берётся из sub; передать владельца в теле нельзя.
+      operationId: pet_post_api_v1_pets
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Pet'}
+              example: {id: 11111111-1111-4111-8111-111111111111, ownerId: 11111111-1111-4111-8111-111111111111, name: Барсик, species: CAT}
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
+      parameters:
+      - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreatePet'}
+            example: {name: Барсик, species: CAT}
+    get:
+      tags:
+      - public
+      summary: Мои питомцы
+      description: Сортировка id ASC. Возвращаются только данные владельца. page начинается с 1, size — 1–100, за пределами списка items=[].
+      operationId: pet_get_api_v1_pets
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PetPage'}
+              example:
+                items:
+                - {id: 11111111-1111-4111-8111-111111111111, ownerId: 11111111-1111-4111-8111-111111111111, name: Барсик, species: CAT}
+                page: 1
+                size: 20
+                total: 1
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '503': {$ref: '#/components/responses/Error503'}
+      parameters:
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
+      x-codeSamples:
+      - {lang: Shell, source: 'curl -X GET ''https://api.pet-care.example/api/v1/pets?page=1&size=20'' -H ''Authorization: Bearer <JWT>'''}
+  /api/v1/pets/{id}:
+    get:
+      tags:
+      - public
+      summary: Получить питомца
+      description: Профиль доступен только владельцу.
+      operationId: pet_get_api_v1_pets_id
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Pet'}
+              example: {id: 11111111-1111-4111-8111-111111111111, ownerId: 11111111-1111-4111-8111-111111111111, name: Барсик, species: CAT}
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '503': {$ref: '#/components/responses/Error503'}
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      x-codeSamples:
+      - {lang: Shell, source: 'curl -X GET ''https://api.pet-care.example/api/v1/pets/11111111-1111-4111-8111-111111111111'' -H ''Authorization:
+          Bearer <JWT>'''}
+  /internal/v1/access/check:
+    post:
+      tags:
+      - internal
+      summary: Проверить владельца
+      description: Только перечисленные сервисы. Для клиентской операции userId берётся вызывающим сервисом из проверенного JWT; для
+        отправки — из сохранённого задания. Совпадение ownerId даёт allowed=true, иначе false. Неизвестный petId также даёт false. Сервисный
+        токен не позволяет клиенту подставить userId напрямую.
+      operationId: pet_post_internal_v1_access_check
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AccessDecision'}
+              example: {allowed: true}
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '503': {$ref: '#/components/responses/Error503'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AccessCheck'}
+            example: {petId: 11111111-1111-4111-8111-111111111111, userId: 11111111-1111-4111-8111-111111111111}
+      security:
+      - serviceJwt: []
+      servers:
+      - {url: 'http://pet-service:8080'}
+      x-allowed-callers:
+      - care-service
+      - health-service
+      - notification-service
+components:
+  securitySchemes:
+    userJwt: {type: http, scheme: bearer, bearerFormat: JWT, description: 'Проверяются подпись, issuer, audience и exp JWT пользователя.'}
+    serviceJwt: {type: http, scheme: bearer, bearerFormat: JWT, description: Сервисный токен Keycloak с audience получателя. Проверяются
+        client_id и разрешённый вызывающий сервис.}
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: UUID запроса; один ключ с другим телом даёт 409.
+      schema: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+    Page:
+      name: page
+      in: query
+      description: Номер страницы.
+      schema: {type: integer, example: 1, minimum: 1, default: 1}
+    Size:
+      name: size
+      in: query
+      description: Размер страницы.
+      schema: {type: integer, example: 20, minimum: 1, maximum: 100, default: 20}
+    Id:
+      name: id
+      in: path
+      required: true
+      description: UUID ресурса.
+      schema: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+  responses:
+    Error400:
+      description: Некорректные параметры или тело запроса
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          example: {type: 'about:blank', title: Некорректные параметры или тело запроса, status: 400, detail: Некорректные параметры
+              или тело запроса., code: BAD_REQUEST}
+    Error401:
+      description: Недействительный или отсутствующий токен
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          example: {type: 'about:blank', title: Недействительный или отсутствующий токен, status: 401, detail: Недействительный или
+              отсутствующий токен., code: UNAUTHENTICATED}
+    Error403:
+      description: Питомец не принадлежит пользователю или сервис не допущен
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          example:
+            type: about:blank
+            title: Питомец не принадлежит пользователю или сервис не допущен
+            status: 403
+            detail: Питомец не принадлежит пользователю или сервис не допущен.
+            code: FORBIDDEN
+    Error409:
+      description: Конфликт состояния или ключа идемпотентности
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          example: {type: 'about:blank', title: Конфликт состояния или ключа идемпотентности, status: 409, detail: Конфликт состояния
+              или ключа идемпотентности., code: CONFLICT}
+    Error503:
+      description: Зависимость временно недоступна
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          example: {type: 'about:blank', title: Зависимость временно недоступна, status: 503, detail: Зависимость временно недоступна.,
+            code: UNAVAILABLE}
+    Error404:
+      description: Ресурс не найден
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          example: {type: 'about:blank', title: Ресурс не найден, status: 404, detail: Ресурс не найден., code: NOT_FOUND}
+  schemas:
+    Problem:
+      type: object
+      additionalProperties: false
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - code
+      properties:
+        type: {type: string, example: 'about:blank', format: uri}
+        title: {type: string, example: Ошибка запроса}
+        status: {type: integer, example: 400, minimum: 400, maximum: 599}
+        detail: {type: string, example: Проверьте параметры запроса.}
+        code: {type: string, example: BAD_REQUEST}
+    CreatePet:
+      type: object
+      additionalProperties: false
+      required:
+      - name
+      - species
+      properties:
+        name: {type: string, example: Барсик, minLength: 1, maxLength: 100}
+        species:
+          type: string
+          example: CAT
+          enum:
+          - CAT
+          - DOG
+          - OTHER
+    Pet:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - ownerId
+      - name
+      - species
+      properties:
+        id: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        ownerId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        name: {type: string, example: Барсик}
+        species:
+          type: string
+          example: CAT
+          enum:
+          - CAT
+          - DOG
+          - OTHER
+    PetPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - page
+      - size
+      - total
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Pet'}
+        page: {type: integer, example: 1, minimum: 1}
+        size: {type: integer, example: 20, minimum: 1, maximum: 100}
+        total: {type: integer, example: 1, minimum: 0}
+    AccessCheck:
+      type: object
+      additionalProperties: false
+      required:
+      - petId
+      - userId
+      properties:
+        petId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+        userId: {type: string, example: 11111111-1111-4111-8111-111111111111, format: uuid}
+    AccessDecision:
+      type: object
+      additionalProperties: false
+      required:
+      - allowed
+      properties:
+        allowed: {type: boolean, example: true}

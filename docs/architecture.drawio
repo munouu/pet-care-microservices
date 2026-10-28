@@ -1,0 +1,778 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="architecture" name="01 Архитектура">
+    <mxGraphModel dx="2200" dy="2100" grid="1" gridSize="10" page="1" pageScale="1" pageWidth="2200" pageHeight="2100">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" parent="1" value="Уход за питомцами · архитектура четырёх сервисов" vertex="1" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=none;fontFamily=Arial;fontSize=35;fontColor=#20344B;fontStyle=1;">
+          <mxGeometry as="geometry" x="50" y="20" width="2100" height="60" />
+        </mxCell>
+        <mxCell id="3" parent="1" value="Сплошные стрелки — синхронные вызовы; пунктирные — события AMQP через RabbitMQ." vertex="1" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=none;fontFamily=Arial;fontSize=24;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="50" y="85" width="2100" height="50" />
+        </mxCell>
+        <mxCell id="4" parent="1" value="Мобильный клиент" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=26;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="50" y="190" width="330" height="80" />
+        </mxCell>
+        <mxCell id="5" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="380" y="230" />
+            <mxPoint as="targetPoint" x="800" y="230" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="6" parent="1" value="HTTPS /api/v1/*, /auth/*" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=none;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="392" y="160" width="396" height="62" />
+        </mxCell>
+        <mxCell id="7" parent="1" value="Nginx · API Gateway" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=28;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="800" y="190" width="540" height="80" />
+        </mxCell>
+        <mxCell id="8" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1340" y="230" />
+            <mxPoint as="targetPoint" x="1760" y="230" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="9" parent="1" value="HTTP /auth/*" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=none;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1352" y="160" width="396" height="62" />
+        </mxCell>
+        <mxCell id="10" parent="1" value="Keycloak" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#F3EDFC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=26;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="1760" y="190" width="380" height="80" />
+        </mxCell>
+        <mxCell id="11" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1950" y="270" />
+            <mxPoint as="targetPoint" x="1950" y="360" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="12" parent="1" value="PostgreSQL protocol" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=21;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1770" y="290" width="360" height="45" />
+        </mxCell>
+        <mxCell id="13" parent="1" value="keycloak_db" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF6F0;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=24;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="1760" y="360" width="380" height="65" />
+        </mxCell>
+        <mxCell id="14" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1070" y="270" />
+            <mxPoint as="targetPoint" x="250" y="570" />
+            <Array as="points">
+              <mxPoint x="1070" y="450" />
+              <mxPoint x="250" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="15" parent="1" value="HTTP /api/v1/pets*" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="50" y="475" width="400" height="70" />
+        </mxCell>
+        <mxCell id="16" parent="1" value="pet-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=27;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="50" y="570" width="400" height="80" />
+        </mxCell>
+        <mxCell id="17" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="250" y="650" />
+            <mxPoint as="targetPoint" x="250" y="740" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="18" parent="1" value="PostgreSQL protocol" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=21;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="65" y="670" width="370" height="45" />
+        </mxCell>
+        <mxCell id="19" parent="1" value="pet_db" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF6F0;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=26;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="50" y="740" width="400" height="70" />
+        </mxCell>
+        <mxCell id="20" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1070" y="270" />
+            <mxPoint as="targetPoint" x="800" y="570" />
+            <Array as="points">
+              <mxPoint x="1070" y="450" />
+              <mxPoint x="800" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="21" parent="1" value="HTTP /api/v1/care/*&#10;/api/v1/calendar" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="600" y="475" width="400" height="70" />
+        </mxCell>
+        <mxCell id="22" parent="1" value="care-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=27;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="600" y="570" width="400" height="80" />
+        </mxCell>
+        <mxCell id="23" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="800" y="650" />
+            <mxPoint as="targetPoint" x="800" y="740" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="24" parent="1" value="PostgreSQL protocol" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=21;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="615" y="670" width="370" height="45" />
+        </mxCell>
+        <mxCell id="25" parent="1" value="care_db" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF6F0;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=26;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="600" y="740" width="400" height="70" />
+        </mxCell>
+        <mxCell id="26" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1070" y="270" />
+            <mxPoint as="targetPoint" x="1350" y="570" />
+            <Array as="points">
+              <mxPoint x="1070" y="450" />
+              <mxPoint x="1350" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="27" parent="1" value="HTTP /api/v1/health/*" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1150" y="475" width="400" height="70" />
+        </mxCell>
+        <mxCell id="28" parent="1" value="health-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=27;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="1150" y="570" width="400" height="80" />
+        </mxCell>
+        <mxCell id="29" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1350" y="650" />
+            <mxPoint as="targetPoint" x="1350" y="740" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="30" parent="1" value="PostgreSQL protocol" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=21;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1165" y="670" width="370" height="45" />
+        </mxCell>
+        <mxCell id="31" parent="1" value="health_db" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF6F0;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=26;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="1150" y="740" width="400" height="70" />
+        </mxCell>
+        <mxCell id="32" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1070" y="270" />
+            <mxPoint as="targetPoint" x="1900" y="570" />
+            <Array as="points">
+              <mxPoint x="1070" y="450" />
+              <mxPoint x="1900" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="33" parent="1" value="HTTP /api/v1/device&#10;/api/v1/notifications" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1700" y="475" width="400" height="70" />
+        </mxCell>
+        <mxCell id="34" parent="1" value="notification-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=27;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="1700" y="570" width="400" height="80" />
+        </mxCell>
+        <mxCell id="35" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1900" y="650" />
+            <mxPoint as="targetPoint" x="1900" y="740" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="36" parent="1" value="PostgreSQL protocol" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=21;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1715" y="670" width="370" height="45" />
+        </mxCell>
+        <mxCell id="37" parent="1" value="notification_db" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF6F0;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=26;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="1700" y="740" width="400" height="70" />
+        </mxCell>
+        <mxCell id="38" parent="1" value="FCM · push-провайдер" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FFF3E4;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="1700" y="920" width="400" height="80" />
+        </mxCell>
+        <mxCell id="39" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="2100" y="610" />
+            <mxPoint as="targetPoint" x="2100" y="960" />
+            <Array as="points">
+              <mxPoint x="2145" y="610" />
+              <mxPoint x="2145" y="960" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="40" parent="1" value="HTTPS POST&#10;/v1/projects/{projectId}/messages:send" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=none;fontFamily=Arial;fontSize=21;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1600" y="830" width="500" height="70" />
+        </mxCell>
+        <mxCell id="41" parent="1" value="У каждого сервиса своя БД и учётная запись. Клиент работает только через Gateway.&#10;JWT проверяются сервисами по ключам Keycloak:&#10;HTTP GET /auth/realms/pet-care/protocol/openid-connect/certs" vertex="1" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=none;fontFamily=Arial;fontSize=23;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="50" y="850" width="1470" height="100" />
+        </mxCell>
+        <mxCell id="42" parent="1" value="Внутренние REST-вызовы · те же сервисы показаны повторно" vertex="1" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=none;fontFamily=Arial;fontSize=29;fontColor=#20344B;fontStyle=1;">
+          <mxGeometry as="geometry" x="50" y="1035" width="2100" height="45" />
+        </mxCell>
+        <mxCell id="43" parent="1" value="care-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="50" y="1120" width="370" height="65" />
+        </mxCell>
+        <mxCell id="44" parent="1" value="pet-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="1730" y="1120" width="420" height="65" />
+        </mxCell>
+        <mxCell id="45" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="420" y="1165" />
+            <mxPoint as="targetPoint" x="1730" y="1165" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="46" parent="1" value="HTTP REST · POST /internal/v1/access/check" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="440" y="1115" width="1270" height="45" />
+        </mxCell>
+        <mxCell id="47" parent="1" value="health-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="50" y="1215" width="370" height="65" />
+        </mxCell>
+        <mxCell id="48" parent="1" value="pet-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="1730" y="1215" width="420" height="65" />
+        </mxCell>
+        <mxCell id="49" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="420" y="1260" />
+            <mxPoint as="targetPoint" x="1730" y="1260" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="50" parent="1" value="HTTP REST · POST /internal/v1/access/check" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="440" y="1210" width="1270" height="45" />
+        </mxCell>
+        <mxCell id="51" parent="1" value="notification-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="50" y="1310" width="370" height="65" />
+        </mxCell>
+        <mxCell id="52" parent="1" value="pet-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="1730" y="1310" width="420" height="65" />
+        </mxCell>
+        <mxCell id="53" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="420" y="1355" />
+            <mxPoint as="targetPoint" x="1730" y="1355" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="54" parent="1" value="HTTP REST · POST /internal/v1/access/check" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="440" y="1305" width="1270" height="45" />
+        </mxCell>
+        <mxCell id="55" parent="1" value="health-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="50" y="1405" width="370" height="65" />
+        </mxCell>
+        <mxCell id="56" parent="1" value="care-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="1730" y="1405" width="420" height="65" />
+        </mxCell>
+        <mxCell id="57" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="420" y="1450" />
+            <mxPoint as="targetPoint" x="1730" y="1450" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="58" parent="1" value="HTTP REST · PUT / DELETE /internal/v1/courses/{activationId}/projection" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="440" y="1400" width="1270" height="45" />
+        </mxCell>
+        <mxCell id="59" parent="1" value="health-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="50" y="1500" width="370" height="65" />
+        </mxCell>
+        <mxCell id="60" parent="1" value="notification-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="1730" y="1500" width="420" height="65" />
+        </mxCell>
+        <mxCell id="61" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="420" y="1545" />
+            <mxPoint as="targetPoint" x="1730" y="1545" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="62" parent="1" value="HTTP REST · PUT / DELETE /internal/v1/courses/{activationId}/reminders" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="440" y="1495" width="1270" height="45" />
+        </mxCell>
+        <mxCell id="63" parent="1" value="notification-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="50" y="1595" width="370" height="65" />
+        </mxCell>
+        <mxCell id="64" parent="1" value="health-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="1730" y="1595" width="420" height="65" />
+        </mxCell>
+        <mxCell id="65" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="420" y="1640" />
+            <mxPoint as="targetPoint" x="1730" y="1640" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="66" parent="1" value="HTTP REST · GET /internal/v1/health/occurrences/{id}" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="440" y="1590" width="1270" height="45" />
+        </mxCell>
+        <mxCell id="67" parent="1" value="Асинхронный обмен" vertex="1" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=none;fontFamily=Arial;fontSize=29;fontColor=#20344B;fontStyle=1;">
+          <mxGeometry as="geometry" x="50" y="1730" width="2100" height="45" />
+        </mxCell>
+        <mxCell id="68" parent="1" value="health-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=26;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="50" y="1870" width="370" height="80" />
+        </mxCell>
+        <mxCell id="69" parent="1" value="RabbitMQ&#10;health.events" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#F3EDFC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=27;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="900" y="1840" width="400" height="140" />
+        </mxCell>
+        <mxCell id="70" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="420" y="1910" />
+            <mxPoint as="targetPoint" x="900" y="1910" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="71" parent="1" value="AMQP health.events" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=none;fontFamily=Arial;fontSize=23;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="432" y="1840" width="456" height="62" />
+        </mxCell>
+        <mxCell id="72" parent="1" value="care-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="1730" y="1820" width="420" height="70" />
+        </mxCell>
+        <mxCell id="73" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1300" y="1910" />
+            <mxPoint as="targetPoint" x="1730" y="1855" />
+            <Array as="points">
+              <mxPoint x="1500" y="1910" />
+              <mxPoint x="1500" y="1855" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="74" parent="1" value="notification-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="1730" y="1940" width="420" height="70" />
+        </mxCell>
+        <mxCell id="75" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1300" y="1910" />
+            <mxPoint as="targetPoint" x="1730" y="1975" />
+            <Array as="points">
+              <mxPoint x="1500" y="1910" />
+              <mxPoint x="1500" y="1975" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="76" parent="1" value="AMQP health.events&#10;по отдельной очереди" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1310" y="1775" width="410" height="70" />
+        </mxCell>
+        <mxCell id="77" parent="1" value="События: health.course.activated и health.occurrence.completed · подписчики: уход и уведомления." vertex="1" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=none;fontFamily=Arial;fontSize=23;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="50" y="2020" width="2100" height="55" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="sequence-success" name="02 Успешный путь">
+    <mxGraphModel dx="2840" dy="2193" grid="1" gridSize="10" page="1" pageScale="1" pageWidth="2840" pageHeight="2193">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" parent="1" value="Запуск курса · успешный путь" vertex="1" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=none;fontFamily=Arial;fontSize=36;fontColor=#20344B;fontStyle=1;">
+          <mxGeometry as="geometry" x="45" y="20" width="2750" height="60" />
+        </mxCell>
+        <mxCell id="3" parent="1" value="Сплошная стрелка — REST-запрос; пунктир — ответ либо сообщение через RabbitMQ.&#10;Одинаковый activationId используется для подготовки, повторов и компенсации." vertex="1" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=none;fontFamily=Arial;fontSize=24;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="45" y="90" width="2750" height="65" />
+        </mxCell>
+        <mxCell id="4" parent="1" value="Пользователь" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="70" y="180" width="380" height="65" />
+        </mxCell>
+        <mxCell id="5" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#64748B;strokeWidth=2;dashed=1;endArrow=none;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="260" y="245" />
+            <mxPoint as="targetPoint" x="260" y="2098" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="6" parent="1" value="API Gateway" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="530" y="180" width="380" height="65" />
+        </mxCell>
+        <mxCell id="7" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#64748B;strokeWidth=2;dashed=1;endArrow=none;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="720" y="245" />
+            <mxPoint as="targetPoint" x="720" y="2098" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="8" parent="1" value="health-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="990" y="180" width="380" height="65" />
+        </mxCell>
+        <mxCell id="9" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#64748B;strokeWidth=2;dashed=1;endArrow=none;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1180" y="245" />
+            <mxPoint as="targetPoint" x="1180" y="2098" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="10" parent="1" value="care-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="1450" y="180" width="380" height="65" />
+        </mxCell>
+        <mxCell id="11" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#64748B;strokeWidth=2;dashed=1;endArrow=none;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1640" y="245" />
+            <mxPoint as="targetPoint" x="1640" y="2098" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="12" parent="1" value="notification-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="1910" y="180" width="380" height="65" />
+        </mxCell>
+        <mxCell id="13" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#64748B;strokeWidth=2;dashed=1;endArrow=none;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="2100" y="245" />
+            <mxPoint as="targetPoint" x="2100" y="2098" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="14" parent="1" value="RabbitMQ" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#F3EDFC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="2370" y="180" width="380" height="65" />
+        </mxCell>
+        <mxCell id="15" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#64748B;strokeWidth=2;dashed=1;endArrow=none;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="2560" y="245" />
+            <mxPoint as="targetPoint" x="2560" y="2098" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="16" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="260" y="326" />
+            <mxPoint as="targetPoint" x="720" y="326" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="17" parent="1" value="POST /api/v1/health/courses/{id}/activations" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="275" y="260" width="430" height="53" />
+        </mxCell>
+        <mxCell id="18" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="720" y="404" />
+            <mxPoint as="targetPoint" x="1180" y="404" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="19" parent="1" value="Запрос + Idempotency-Key" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="735" y="338" width="430" height="53" />
+        </mxCell>
+        <mxCell id="20" parent="1" value="Проверить владельца.&#10;Сохранить PREPARING&#10;и operationId" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF6F0;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=23;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="990" y="416" width="380" height="113" />
+        </mxCell>
+        <mxCell id="21" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1180" y="613" />
+            <mxPoint as="targetPoint" x="720" y="613" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="22" parent="1" value="202 + operationId" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="735" y="547" width="430" height="53" />
+        </mxCell>
+        <mxCell id="23" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="720" y="691" />
+            <mxPoint as="targetPoint" x="260" y="691" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="24" parent="1" value="202 + operationId" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="275" y="625" width="430" height="53" />
+        </mxCell>
+        <mxCell id="25" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1180" y="779" />
+            <mxPoint as="targetPoint" x="1640" y="779" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="26" parent="1" value="PUT&#10;/internal/v1/courses/{activationId}/projection" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1195" y="703" width="430" height="63" />
+        </mxCell>
+        <mxCell id="27" parent="1" value="Скрытая проекция&#10;PREPARED" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF6F0;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=23;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="1450" y="791" width="380" height="82" />
+        </mxCell>
+        <mxCell id="28" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1640" y="957" />
+            <mxPoint as="targetPoint" x="1180" y="957" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="29" parent="1" value="204" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1195" y="891" width="430" height="53" />
+        </mxCell>
+        <mxCell id="30" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1180" y="1035" />
+            <mxPoint as="targetPoint" x="2100" y="1035" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="31" parent="1" value="PUT /internal/v1/courses/{activationId}/reminders" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1195" y="969" width="890" height="53" />
+        </mxCell>
+        <mxCell id="32" parent="1" value="Отключённые задания&#10;PREPARED" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF6F0;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=23;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="1910" y="1047" width="380" height="82" />
+        </mxCell>
+        <mxCell id="33" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="2100" y="1213" />
+            <mxPoint as="targetPoint" x="1180" y="1213" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="34" parent="1" value="204" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1195" y="1147" width="890" height="53" />
+        </mxCell>
+        <mxCell id="35" parent="1" value="Одна транзакция:&#10;ACTIVE + SUCCEEDED&#10;+ outbox" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF6F0;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=23;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="990" y="1225" width="380" height="113" />
+        </mxCell>
+        <mxCell id="36" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1180" y="1422" />
+            <mxPoint as="targetPoint" x="2560" y="1422" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="37" parent="1" value="health.course.activated" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1195" y="1356" width="1350" height="53" />
+        </mxCell>
+        <mxCell id="38" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="2560" y="1500" />
+            <mxPoint as="targetPoint" x="1640" y="1500" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="39" parent="1" value="health.course.activated" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1655" y="1434" width="890" height="53" />
+        </mxCell>
+        <mxCell id="40" parent="1" value="Проекция видима" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF6F0;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=23;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="1450" y="1512" width="380" height="70" />
+        </mxCell>
+        <mxCell id="41" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="2560" y="1666" />
+            <mxPoint as="targetPoint" x="2100" y="1666" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="42" parent="1" value="health.course.activated" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="2115" y="1600" width="430" height="53" />
+        </mxCell>
+        <mxCell id="43" parent="1" value="Задания включены" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF6F0;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=23;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="1910" y="1678" width="380" height="70" />
+        </mxCell>
+        <mxCell id="44" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="260" y="1832" />
+            <mxPoint as="targetPoint" x="720" y="1832" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="45" parent="1" value="GET /api/v1/health/operations/{id}" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="275" y="1766" width="430" height="53" />
+        </mxCell>
+        <mxCell id="46" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="720" y="1910" />
+            <mxPoint as="targetPoint" x="1180" y="1910" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="47" parent="1" value="Получить состояние" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="735" y="1844" width="430" height="53" />
+        </mxCell>
+        <mxCell id="48" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1180" y="1988" />
+            <mxPoint as="targetPoint" x="720" y="1988" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="49" parent="1" value="SUCCEEDED" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="735" y="1922" width="430" height="53" />
+        </mxCell>
+        <mxCell id="50" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="720" y="2066" />
+            <mxPoint as="targetPoint" x="260" y="2066" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="51" parent="1" value="SUCCEEDED" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="275" y="2000" width="430" height="53" />
+        </mxCell>
+        <mxCell id="52" parent="1" value="После ACTIVE — повторная доставка вперёд. До ACTIVE — компенсация обоих участников." vertex="1" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=none;fontFamily=Arial;fontSize=23;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="45" y="2118" width="2750" height="50" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="sequence-failure" name="03 Сбой и компенсация">
+    <mxGraphModel dx="2380" dy="2367" grid="1" gridSize="10" page="1" pageScale="1" pageWidth="2380" pageHeight="2367">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" parent="1" value="Запуск курса · отказ и компенсация" vertex="1" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=none;fontFamily=Arial;fontSize=36;fontColor=#20344B;fontStyle=1;">
+          <mxGeometry as="geometry" x="45" y="20" width="2290" height="60" />
+        </mxCell>
+        <mxCell id="3" parent="1" value="Сплошная стрелка — REST-запрос; пунктир — ответ либо сообщение через RabbitMQ.&#10;Одинаковый activationId используется для подготовки, повторов и компенсации." vertex="1" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=none;fontFamily=Arial;fontSize=24;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="45" y="90" width="2290" height="65" />
+        </mxCell>
+        <mxCell id="4" parent="1" value="Пользователь" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="70" y="180" width="380" height="65" />
+        </mxCell>
+        <mxCell id="5" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#64748B;strokeWidth=2;dashed=1;endArrow=none;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="260" y="245" />
+            <mxPoint as="targetPoint" x="260" y="2272" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="6" parent="1" value="API Gateway" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="530" y="180" width="380" height="65" />
+        </mxCell>
+        <mxCell id="7" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#64748B;strokeWidth=2;dashed=1;endArrow=none;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="720" y="245" />
+            <mxPoint as="targetPoint" x="720" y="2272" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="8" parent="1" value="health-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="990" y="180" width="380" height="65" />
+        </mxCell>
+        <mxCell id="9" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#64748B;strokeWidth=2;dashed=1;endArrow=none;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1180" y="245" />
+            <mxPoint as="targetPoint" x="1180" y="2272" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="10" parent="1" value="care-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="1450" y="180" width="380" height="65" />
+        </mxCell>
+        <mxCell id="11" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#64748B;strokeWidth=2;dashed=1;endArrow=none;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1640" y="245" />
+            <mxPoint as="targetPoint" x="1640" y="2272" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="12" parent="1" value="notification-service" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF2FC;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=25;fontStyle=1;spacing=10;">
+          <mxGeometry as="geometry" x="1910" y="180" width="380" height="65" />
+        </mxCell>
+        <mxCell id="13" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#64748B;strokeWidth=2;dashed=1;endArrow=none;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="2100" y="245" />
+            <mxPoint as="targetPoint" x="2100" y="2272" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="14" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="260" y="326" />
+            <mxPoint as="targetPoint" x="720" y="326" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="15" parent="1" value="POST /api/v1/health/courses/{id}/activations" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="275" y="260" width="430" height="53" />
+        </mxCell>
+        <mxCell id="16" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="720" y="404" />
+            <mxPoint as="targetPoint" x="1180" y="404" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="17" parent="1" value="Запрос + Idempotency-Key" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="735" y="338" width="430" height="53" />
+        </mxCell>
+        <mxCell id="18" parent="1" value="Проверить владельца.&#10;Сохранить PREPARING&#10;и operationId" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF6F0;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=23;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="990" y="416" width="380" height="113" />
+        </mxCell>
+        <mxCell id="19" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1180" y="613" />
+            <mxPoint as="targetPoint" x="720" y="613" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="20" parent="1" value="202 + operationId" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="735" y="547" width="430" height="53" />
+        </mxCell>
+        <mxCell id="21" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="720" y="691" />
+            <mxPoint as="targetPoint" x="260" y="691" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="22" parent="1" value="202 + operationId" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="275" y="625" width="430" height="53" />
+        </mxCell>
+        <mxCell id="23" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1180" y="779" />
+            <mxPoint as="targetPoint" x="1640" y="779" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="24" parent="1" value="PUT&#10;/internal/v1/courses/{activationId}/projection" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1195" y="703" width="430" height="63" />
+        </mxCell>
+        <mxCell id="25" parent="1" value="Скрытая проекция&#10;PREPARED" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF6F0;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=23;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="1450" y="791" width="380" height="82" />
+        </mxCell>
+        <mxCell id="26" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1640" y="957" />
+            <mxPoint as="targetPoint" x="1180" y="957" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="27" parent="1" value="204" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1195" y="891" width="430" height="53" />
+        </mxCell>
+        <mxCell id="28" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1180" y="1035" />
+            <mxPoint as="targetPoint" x="2100" y="1035" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="29" parent="1" value="PUT /internal/v1/courses/{activationId}/reminders" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1195" y="969" width="890" height="53" />
+        </mxCell>
+        <mxCell id="30" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="2100" y="1113" />
+            <mxPoint as="targetPoint" x="1180" y="1113" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="31" parent="1" value="503 / таймаут" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1195" y="1047" width="890" height="53" />
+        </mxCell>
+        <mxCell id="32" parent="1" value="Повторы подготовки.&#10;Через 30 с:&#10;COMPENSATING" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF6F0;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=23;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="990" y="1125" width="380" height="113" />
+        </mxCell>
+        <mxCell id="33" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1180" y="1332" />
+            <mxPoint as="targetPoint" x="1640" y="1332" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="34" parent="1" value="DELETE&#10;/internal/v1/courses/{activationId}/projection" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1195" y="1256" width="430" height="63" />
+        </mxCell>
+        <mxCell id="35" parent="1" value="Удалить проекцию;&#10;сохранить отмену&#10;activationId" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF6F0;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=23;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="1450" y="1344" width="380" height="113" />
+        </mxCell>
+        <mxCell id="36" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1640" y="1541" />
+            <mxPoint as="targetPoint" x="1180" y="1541" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="37" parent="1" value="204" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1195" y="1475" width="430" height="53" />
+        </mxCell>
+        <mxCell id="38" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1180" y="1619" />
+            <mxPoint as="targetPoint" x="2100" y="1619" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="39" parent="1" value="DELETE /internal/v1/courses/{activationId}/reminders" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1195" y="1553" width="890" height="53" />
+        </mxCell>
+        <mxCell id="40" parent="1" value="После восстановления:&#10;отменить задания;&#10;сохранить отмену activationId" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF6F0;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=23;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="1910" y="1631" width="380" height="113" />
+        </mxCell>
+        <mxCell id="41" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="2100" y="1828" />
+            <mxPoint as="targetPoint" x="1180" y="1828" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="42" parent="1" value="204" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="1195" y="1762" width="890" height="53" />
+        </mxCell>
+        <mxCell id="43" parent="1" value="Оба DELETE подтверждены:&#10;курс DRAFT, операция FAILED" vertex="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#EAF6F0;strokeColor=#20344B;fontFamily=Arial;fontColor=#20344B;fontSize=23;fontStyle=0;spacing=10;">
+          <mxGeometry as="geometry" x="990" y="1840" width="380" height="82" />
+        </mxCell>
+        <mxCell id="44" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="260" y="2006" />
+            <mxPoint as="targetPoint" x="720" y="2006" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="45" parent="1" value="GET /api/v1/health/operations/{id}" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="275" y="1940" width="430" height="53" />
+        </mxCell>
+        <mxCell id="46" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=0;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="720" y="2084" />
+            <mxPoint as="targetPoint" x="1180" y="2084" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="47" parent="1" value="Получить состояние" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="735" y="2018" width="430" height="53" />
+        </mxCell>
+        <mxCell id="48" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1180" y="2162" />
+            <mxPoint as="targetPoint" x="720" y="2162" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="49" parent="1" value="FAILED + причина" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="735" y="2096" width="430" height="53" />
+        </mxCell>
+        <mxCell id="50" parent="1" value="" edge="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#20344B;strokeWidth=2;dashed=1;endArrow=block;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="720" y="2240" />
+            <mxPoint as="targetPoint" x="260" y="2240" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="51" parent="1" value="FAILED + причина" vertex="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=#FFFFFF;fontFamily=Arial;fontSize=22;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="275" y="2174" width="430" height="53" />
+        </mxCell>
+        <mxCell id="52" parent="1" value="После ACTIVE — повторная доставка вперёд. До ACTIVE — компенсация обоих участников." vertex="1" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=0;strokeColor=none;fillColor=none;fontFamily=Arial;fontSize=23;fontColor=#20344B;fontStyle=0;">
+          <mxGeometry as="geometry" x="45" y="2292" width="2290" height="50" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
