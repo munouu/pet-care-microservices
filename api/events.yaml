@@ -1,0 +1,698 @@
+asyncapi: 2.6.0
+info:
+  title: Pet Care domain events
+  version: 1.0.0
+  description: 'Сводный контракт всей системы: publish/subscribe показывают стороны логического канала, конкретные
+    издатели и подписчики в description.'
+servers:
+  rabbitmq:
+    url: rabbitmq:5672
+    protocol: amqp
+    description: Внутренняя сеть
+defaultContentType: application/json
+channels:
+  payment.completed:
+    description: 'Издатель: payment-service; подписчики: appointment-service. Routing key: payment.completed.'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: pet-care.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: 0.2.0
+    publish:
+      operationId: publishPaymentCompleted
+      message:
+        $ref: '#/components/messages/PaymentCompleted'
+    subscribe:
+      operationId: consumePaymentCompleted
+      message:
+        $ref: '#/components/messages/PaymentCompleted'
+  payment.failed:
+    description: 'Издатель: payment-service; подписчики: appointment-service. Routing key: payment.failed.'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: pet-care.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: 0.2.0
+    publish:
+      operationId: publishPaymentFailed
+      message:
+        $ref: '#/components/messages/PaymentFailed'
+    subscribe:
+      operationId: consumePaymentFailed
+      message:
+        $ref: '#/components/messages/PaymentFailed'
+  payment.refunded:
+    description: 'Издатель: payment-service; подписчики: appointment-service. Routing key: payment.refunded.'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: pet-care.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: 0.2.0
+    publish:
+      operationId: publishPaymentRefunded
+      message:
+        $ref: '#/components/messages/PaymentRefunded'
+    subscribe:
+      operationId: consumePaymentRefunded
+      message:
+        $ref: '#/components/messages/PaymentRefunded'
+  slot.expired:
+    description: 'Издатель: schedule-service; подписчики: appointment-service. Routing key: slot.expired.'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: pet-care.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: 0.2.0
+    publish:
+      operationId: publishSlotExpired
+      message:
+        $ref: '#/components/messages/SlotExpired'
+    subscribe:
+      operationId: consumeSlotExpired
+      message:
+        $ref: '#/components/messages/SlotExpired'
+  appointment.confirmed:
+    description: 'Издатель: appointment-service; подписчики: notification-service. Routing key: appointment.confirmed.'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: pet-care.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: 0.2.0
+    publish:
+      operationId: publishAppointmentConfirmed
+      message:
+        $ref: '#/components/messages/AppointmentConfirmed'
+    subscribe:
+      operationId: consumeAppointmentConfirmed
+      message:
+        $ref: '#/components/messages/AppointmentConfirmed'
+  appointment.cancelled:
+    description: 'Издатель: appointment-service; подписчики: notification-service. Routing key: appointment.cancelled.'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: pet-care.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: 0.2.0
+    publish:
+      operationId: publishAppointmentCancelled
+      message:
+        $ref: '#/components/messages/AppointmentCancelled'
+    subscribe:
+      operationId: consumeAppointmentCancelled
+      message:
+        $ref: '#/components/messages/AppointmentCancelled'
+  health.course.created:
+    description: 'Издатель: health-service; подписчики: care-service, notification-service. Routing key: health.course.created.'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: pet-care.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: 0.2.0
+    publish:
+      operationId: publishHealthCourseCreated
+      message:
+        $ref: '#/components/messages/HealthCourseCreated'
+    subscribe:
+      operationId: consumeHealthCourseCreated
+      message:
+        $ref: '#/components/messages/HealthCourseCreated'
+  health.occurrence.completed:
+    description: 'Издатель: health-service; подписчики: care-service, notification-service. Routing key: health.occurrence.completed.'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: pet-care.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: 0.2.0
+    publish:
+      operationId: publishHealthOccurrenceCompleted
+      message:
+        $ref: '#/components/messages/HealthOccurrenceCompleted'
+    subscribe:
+      operationId: consumeHealthOccurrenceCompleted
+      message:
+        $ref: '#/components/messages/HealthOccurrenceCompleted'
+components:
+  messages:
+    PaymentCompleted:
+      name: PaymentCompleted
+      title: payment.completed
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          eventType:
+            type: string
+            enum:
+            - payment.completed
+          occurredAt:
+            type: string
+            format: date-time
+          schemaVersion:
+            type: integer
+            enum:
+            - 1
+          correlationId:
+            type: string
+            format: uuid
+          payload:
+            type: object
+            properties:
+              appointmentId:
+                type: string
+                format: uuid
+              paymentId:
+                type: string
+                format: uuid
+              amountKopecks:
+                type: integer
+                minimum: 1
+            required:
+            - appointmentId
+            - paymentId
+            - amountKopecks
+            additionalProperties: false
+        required:
+        - eventId
+        - eventType
+        - occurredAt
+        - schemaVersion
+        - correlationId
+        - payload
+        additionalProperties: false
+      examples:
+      - payload:
+          eventId: 99999999-9999-4999-8999-000000000001
+          eventType: payment.completed
+          occurredAt: '2027-01-15T09:15:00Z'
+          schemaVersion: 1
+          correlationId: 33333333-3333-4333-8333-333333333333
+          payload:
+            appointmentId: 33333333-3333-4333-8333-333333333333
+            paymentId: 88888888-8888-4888-8888-888888888888
+            amountKopecks: 150000
+    PaymentFailed:
+      name: PaymentFailed
+      title: payment.failed
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          eventType:
+            type: string
+            enum:
+            - payment.failed
+          occurredAt:
+            type: string
+            format: date-time
+          schemaVersion:
+            type: integer
+            enum:
+            - 1
+          correlationId:
+            type: string
+            format: uuid
+          payload:
+            type: object
+            properties:
+              appointmentId:
+                type: string
+                format: uuid
+              paymentId:
+                type: string
+                format: uuid
+              reason:
+                type: string
+            required:
+            - appointmentId
+            - paymentId
+            - reason
+            additionalProperties: false
+        required:
+        - eventId
+        - eventType
+        - occurredAt
+        - schemaVersion
+        - correlationId
+        - payload
+        additionalProperties: false
+      examples:
+      - payload:
+          eventId: 99999999-9999-4999-8999-000000000002
+          eventType: payment.failed
+          occurredAt: '2027-01-15T09:15:00Z'
+          schemaVersion: 1
+          correlationId: 33333333-3333-4333-8333-333333333333
+          payload:
+            appointmentId: 33333333-3333-4333-8333-333333333333
+            paymentId: 88888888-8888-4888-8888-888888888888
+            reason: DECLINED
+    PaymentRefunded:
+      name: PaymentRefunded
+      title: payment.refunded
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          eventType:
+            type: string
+            enum:
+            - payment.refunded
+          occurredAt:
+            type: string
+            format: date-time
+          schemaVersion:
+            type: integer
+            enum:
+            - 1
+          correlationId:
+            type: string
+            format: uuid
+          payload:
+            type: object
+            properties:
+              appointmentId:
+                type: string
+                format: uuid
+              paymentId:
+                type: string
+                format: uuid
+              amountKopecks:
+                type: integer
+                minimum: 1
+            required:
+            - appointmentId
+            - paymentId
+            - amountKopecks
+            additionalProperties: false
+        required:
+        - eventId
+        - eventType
+        - occurredAt
+        - schemaVersion
+        - correlationId
+        - payload
+        additionalProperties: false
+      examples:
+      - payload:
+          eventId: 99999999-9999-4999-8999-000000000003
+          eventType: payment.refunded
+          occurredAt: '2027-01-15T09:15:00Z'
+          schemaVersion: 1
+          correlationId: 33333333-3333-4333-8333-333333333333
+          payload:
+            appointmentId: 33333333-3333-4333-8333-333333333333
+            paymentId: 88888888-8888-4888-8888-888888888888
+            amountKopecks: 150000
+    SlotExpired:
+      name: SlotExpired
+      title: slot.expired
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          eventType:
+            type: string
+            enum:
+            - slot.expired
+          occurredAt:
+            type: string
+            format: date-time
+          schemaVersion:
+            type: integer
+            enum:
+            - 1
+          correlationId:
+            type: string
+            format: uuid
+          payload:
+            type: object
+            properties:
+              appointmentId:
+                type: string
+                format: uuid
+              slotId:
+                type: string
+                format: uuid
+            required:
+            - appointmentId
+            - slotId
+            additionalProperties: false
+        required:
+        - eventId
+        - eventType
+        - occurredAt
+        - schemaVersion
+        - correlationId
+        - payload
+        additionalProperties: false
+      examples:
+      - payload:
+          eventId: 99999999-9999-4999-8999-000000000004
+          eventType: slot.expired
+          occurredAt: '2027-01-15T09:15:00Z'
+          schemaVersion: 1
+          correlationId: 33333333-3333-4333-8333-333333333333
+          payload:
+            appointmentId: 33333333-3333-4333-8333-333333333333
+            slotId: 55555555-5555-4555-8555-555555555555
+    AppointmentConfirmed:
+      name: AppointmentConfirmed
+      title: appointment.confirmed
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          eventType:
+            type: string
+            enum:
+            - appointment.confirmed
+          occurredAt:
+            type: string
+            format: date-time
+          schemaVersion:
+            type: integer
+            enum:
+            - 1
+          correlationId:
+            type: string
+            format: uuid
+          payload:
+            type: object
+            properties:
+              appointmentId:
+                type: string
+                format: uuid
+              ownerId:
+                type: string
+                format: uuid
+              petId:
+                type: string
+                format: uuid
+              vetId:
+                type: string
+                format: uuid
+              startAt:
+                type: string
+                format: date-time
+            required:
+            - appointmentId
+            - ownerId
+            - petId
+            - vetId
+            - startAt
+            additionalProperties: false
+        required:
+        - eventId
+        - eventType
+        - occurredAt
+        - schemaVersion
+        - correlationId
+        - payload
+        additionalProperties: false
+      examples:
+      - payload:
+          eventId: 99999999-9999-4999-8999-000000000005
+          eventType: appointment.confirmed
+          occurredAt: '2027-01-15T09:15:00Z'
+          schemaVersion: 1
+          correlationId: 33333333-3333-4333-8333-333333333333
+          payload:
+            appointmentId: 33333333-3333-4333-8333-333333333333
+            ownerId: 11111111-1111-4111-8111-111111111111
+            petId: 22222222-2222-4222-8222-222222222222
+            vetId: 44444444-4444-4444-8444-444444444444
+            startAt: '2027-01-15T10:00:00Z'
+    AppointmentCancelled:
+      name: AppointmentCancelled
+      title: appointment.cancelled
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          eventType:
+            type: string
+            enum:
+            - appointment.cancelled
+          occurredAt:
+            type: string
+            format: date-time
+          schemaVersion:
+            type: integer
+            enum:
+            - 1
+          correlationId:
+            type: string
+            format: uuid
+          payload:
+            type: object
+            properties:
+              appointmentId:
+                type: string
+                format: uuid
+              ownerId:
+                type: string
+                format: uuid
+              petId:
+                type: string
+                format: uuid
+              reason:
+                type: string
+            required:
+            - appointmentId
+            - ownerId
+            - petId
+            - reason
+            additionalProperties: false
+        required:
+        - eventId
+        - eventType
+        - occurredAt
+        - schemaVersion
+        - correlationId
+        - payload
+        additionalProperties: false
+      examples:
+      - payload:
+          eventId: 99999999-9999-4999-8999-000000000006
+          eventType: appointment.cancelled
+          occurredAt: '2027-01-15T09:15:00Z'
+          schemaVersion: 1
+          correlationId: 33333333-3333-4333-8333-333333333333
+          payload:
+            appointmentId: 33333333-3333-4333-8333-333333333333
+            ownerId: 11111111-1111-4111-8111-111111111111
+            petId: 22222222-2222-4222-8222-222222222222
+            reason: PAYMENT_FAILED
+    HealthCourseCreated:
+      name: HealthCourseCreated
+      title: health.course.created
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          eventType:
+            type: string
+            enum:
+            - health.course.created
+          occurredAt:
+            type: string
+            format: date-time
+          schemaVersion:
+            type: integer
+            enum:
+            - 1
+          correlationId:
+            type: string
+            format: uuid
+          payload:
+            type: object
+            properties:
+              courseId:
+                type: string
+                format: uuid
+              petId:
+                type: string
+                format: uuid
+              ownerId:
+                type: string
+                format: uuid
+              medication:
+                type: string
+              occurrences:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    occurrenceId:
+                      type: string
+                      format: uuid
+                    scheduledAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - occurrenceId
+                  - scheduledAt
+                  additionalProperties: false
+            required:
+            - courseId
+            - petId
+            - ownerId
+            - medication
+            - occurrences
+            additionalProperties: false
+        required:
+        - eventId
+        - eventType
+        - occurredAt
+        - schemaVersion
+        - correlationId
+        - payload
+        additionalProperties: false
+      examples:
+      - payload:
+          eventId: 99999999-9999-4999-8999-000000000007
+          eventType: health.course.created
+          occurredAt: '2027-01-16T08:00:00Z'
+          schemaVersion: 1
+          correlationId: 66666666-6666-4666-8666-666666666666
+          payload:
+            courseId: 66666666-6666-4666-8666-666666666666
+            petId: 22222222-2222-4222-8222-222222222222
+            ownerId: 11111111-1111-4111-8111-111111111111
+            medication: Препарат по назначению
+            occurrences:
+            - occurrenceId: 77777777-7777-4777-8777-777777777777
+              scheduledAt: '2027-01-16T08:00:00Z'
+    HealthOccurrenceCompleted:
+      name: HealthOccurrenceCompleted
+      title: health.occurrence.completed
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          eventType:
+            type: string
+            enum:
+            - health.occurrence.completed
+          occurredAt:
+            type: string
+            format: date-time
+          schemaVersion:
+            type: integer
+            enum:
+            - 1
+          correlationId:
+            type: string
+            format: uuid
+          payload:
+            type: object
+            properties:
+              courseId:
+                type: string
+                format: uuid
+              petId:
+                type: string
+                format: uuid
+              occurrenceId:
+                type: string
+                format: uuid
+              status:
+                type: string
+                enum:
+                - TAKEN
+                - SKIPPED
+              recordedAt:
+                type: string
+                format: date-time
+            required:
+            - courseId
+            - petId
+            - occurrenceId
+            - status
+            - recordedAt
+            additionalProperties: false
+        required:
+        - eventId
+        - eventType
+        - occurredAt
+        - schemaVersion
+        - correlationId
+        - payload
+        additionalProperties: false
+      examples:
+      - payload:
+          eventId: 99999999-9999-4999-8999-000000000008
+          eventType: health.occurrence.completed
+          occurredAt: '2027-01-16T08:00:00Z'
+          schemaVersion: 1
+          correlationId: 66666666-6666-4666-8666-666666666666
+          payload:
+            courseId: 66666666-6666-4666-8666-666666666666
+            petId: 22222222-2222-4222-8222-222222222222
+            occurrenceId: 77777777-7777-4777-8777-777777777777
+            status: TAKEN
+            recordedAt: '2027-01-16T08:00:00Z'

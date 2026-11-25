@@ -1,0 +1,574 @@
+openapi: 3.0.3
+info:
+  title: payment-service
+  version: 1.0.0
+  description: Собственная попытка платежа и возврат. Подпись callback, проверка суммы, уникальность appointmentId
+    и providerEventId.
+servers:
+- url: https://api.pet-care.example
+  description: API Gateway
+security:
+- userJwt: []
+tags:
+- name: public
+  description: Клиент через Gateway
+- name: internal
+  description: Внутренняя сеть, service JWT
+- name: webhook
+  description: Подписанный callback PSP
+paths:
+  /internal/v1/payments:
+    post:
+      tags:
+      - internal
+      operationId: payment_service_post_internal_v1_payments
+      summary: Создать платёжную сессию
+      description: 'Доступ: appointment-service. Сохранить намерение до PSP, стабильный ключ провайдера appointmentId.
+        Сверять неизвестный результат. Tombstone отмены запрещает поздний POST.'
+      security:
+      - serviceJwt: []
+      servers:
+      - url: http://payment-service
+        description: Внутренняя сеть
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+        example: 11111111-1111-4111-8111-111111111111
+        description: Ключ одной логической операции; повтор с другим телом — 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                appointmentId:
+                  type: string
+                  format: uuid
+                amountKopecks:
+                  type: integer
+                  minimum: 1
+                currency:
+                  type: string
+                  enum:
+                  - RUB
+                expiresAt:
+                  type: string
+                  format: date-time
+              required:
+              - appointmentId
+              - amountKopecks
+              - currency
+              - expiresAt
+              additionalProperties: false
+            example:
+              appointmentId: 33333333-3333-4333-8333-333333333333
+              amountKopecks: 150000
+              currency: RUB
+              expiresAt: '2027-01-15T09:15:00Z'
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+              example:
+                id: 88888888-8888-4888-8888-888888888888
+                appointmentId: 33333333-3333-4333-8333-333333333333
+                amountKopecks: 150000
+                currency: RUB
+                status: INITIATED
+                paymentUrl: https://pay.example/session/123
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /internal/v1/payments/{appointmentId}/cancellation:
+    put:
+      tags:
+      - internal
+      operationId: payment_service_put_internal_v1_payments_appointmentId_cancellation
+      summary: Отменить сессию или вернуть платёж
+      description: 'Доступ: appointment-service. Долговечное намерение отмены. При списании полный возврат,
+        иначе отмена сессии. Позднее списание также возвращается. Если попытки нет, сохраняется tombstone.
+        202 означает принятую ответственность, не возврат.'
+      security:
+      - serviceJwt: []
+      servers:
+      - url: http://payment-service
+        description: Внутренняя сеть
+      parameters:
+      - name: appointmentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        example: 33333333-3333-4333-8333-333333333333
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+        example: 11111111-1111-4111-8111-111111111111
+        description: Ключ одной логической операции; повтор с другим телом — 409.
+      responses:
+        '202':
+          description: Принято в обработку
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                required:
+                - ok
+                additionalProperties: false
+              example:
+                ok: true
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /internal/v1/payments/{appointmentId}:
+    get:
+      tags:
+      - internal
+      operationId: payment_service_get_internal_v1_payments_appointmentId
+      summary: Проверить состояние платежа
+      description: 'Доступ: appointment-service. Авторитетный статус, результат сверки с PSP. 404 если попытки
+        ещё нет.'
+      security:
+      - serviceJwt: []
+      servers:
+      - url: http://payment-service
+        description: Внутренняя сеть
+      parameters:
+      - name: appointmentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        example: 33333333-3333-4333-8333-333333333333
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+              example:
+                id: 88888888-8888-4888-8888-888888888888
+                appointmentId: 33333333-3333-4333-8333-333333333333
+                amountKopecks: 150000
+                currency: RUB
+                status: INITIATED
+                paymentUrl: https://pay.example/session/123
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /webhooks/payments:
+    post:
+      tags:
+      - webhook
+      operationId: payment_service_post_webhooks_payments
+      summary: Принять подписанный callback PSP
+      description: 'Доступ: PSP. Условный учебный протокол. Проверить HMAC сырого тела, связать providerPaymentId,
+        appointmentId и сумму; дедупликация providerEventId; спорные результаты сверять, финальные статусы
+        не понижать.'
+      security:
+      - providerSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                providerEventId:
+                  type: string
+                providerPaymentId:
+                  type: string
+                appointmentId:
+                  type: string
+                  format: uuid
+                status:
+                  type: string
+                  enum:
+                  - SUCCEEDED
+                  - FAILED
+                  - REFUNDED
+                amountKopecks:
+                  type: integer
+                  minimum: 1
+                currency:
+                  type: string
+                  enum:
+                  - RUB
+              required:
+              - providerEventId
+              - providerPaymentId
+              - appointmentId
+              - status
+              - amountKopecks
+              - currency
+              additionalProperties: false
+            example:
+              providerEventId: evt_001
+              providerPaymentId: pay_001
+              appointmentId: 33333333-3333-4333-8333-333333333333
+              status: SUCCEEDED
+              amountKopecks: 150000
+              currency: RUB
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                required:
+                - ok
+                additionalProperties: false
+              example:
+                ok: true
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '503':
+          $ref: '#/components/responses/Error503'
+components:
+  securitySchemes:
+    userJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    serviceJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    providerSignature:
+      type: apiKey
+      in: header
+      name: X-Provider-Signature
+  schemas:
+    Problem:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        code:
+          type: string
+        correlationId:
+          type: string
+          format: uuid
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - code
+      - correlationId
+      additionalProperties: false
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        appointmentId:
+          type: string
+          format: uuid
+        amountKopecks:
+          type: integer
+          minimum: 1
+        currency:
+          type: string
+          enum:
+          - RUB
+        status:
+          type: string
+          enum:
+          - INITIATED
+          - COMPLETED
+          - FAILED
+          - CANCELLED
+          - REFUND_PENDING
+          - REFUNDED
+        paymentUrl:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - id
+      - appointmentId
+      - amountKopecks
+      - currency
+      - status
+      - paymentUrl
+      additionalProperties: false
+    PaymentCompleted:
+      type: object
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          enum:
+          - payment.completed
+        occurredAt:
+          type: string
+          format: date-time
+        schemaVersion:
+          type: integer
+          enum:
+          - 1
+        correlationId:
+          type: string
+          format: uuid
+        payload:
+          type: object
+          properties:
+            appointmentId:
+              type: string
+              format: uuid
+            paymentId:
+              type: string
+              format: uuid
+            amountKopecks:
+              type: integer
+              minimum: 1
+          required:
+          - appointmentId
+          - paymentId
+          - amountKopecks
+          additionalProperties: false
+      required:
+      - eventId
+      - eventType
+      - occurredAt
+      - schemaVersion
+      - correlationId
+      - payload
+      additionalProperties: false
+    PaymentFailed:
+      type: object
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          enum:
+          - payment.failed
+        occurredAt:
+          type: string
+          format: date-time
+        schemaVersion:
+          type: integer
+          enum:
+          - 1
+        correlationId:
+          type: string
+          format: uuid
+        payload:
+          type: object
+          properties:
+            appointmentId:
+              type: string
+              format: uuid
+            paymentId:
+              type: string
+              format: uuid
+            reason:
+              type: string
+          required:
+          - appointmentId
+          - paymentId
+          - reason
+          additionalProperties: false
+      required:
+      - eventId
+      - eventType
+      - occurredAt
+      - schemaVersion
+      - correlationId
+      - payload
+      additionalProperties: false
+    PaymentRefunded:
+      type: object
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          enum:
+          - payment.refunded
+        occurredAt:
+          type: string
+          format: date-time
+        schemaVersion:
+          type: integer
+          enum:
+          - 1
+        correlationId:
+          type: string
+          format: uuid
+        payload:
+          type: object
+          properties:
+            appointmentId:
+              type: string
+              format: uuid
+            paymentId:
+              type: string
+              format: uuid
+            amountKopecks:
+              type: integer
+              minimum: 1
+          required:
+          - appointmentId
+          - paymentId
+          - amountKopecks
+          additionalProperties: false
+      required:
+      - eventId
+      - eventType
+      - occurredAt
+      - schemaVersion
+      - correlationId
+      - payload
+      additionalProperties: false
+  responses:
+    Error400:
+      description: Некорректные параметры
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://pet-care.example/problems/400
+            title: Некорректные параметры
+            status: 400
+            detail: Некорректные параметры
+            code: INVALID_INPUT
+            correlationId: 11111111-1111-4111-8111-111111111111
+    Error401:
+      description: Нет действительной аутентификации
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://pet-care.example/problems/401
+            title: Нет действительной аутентификации
+            status: 401
+            detail: Нет действительной аутентификации
+            code: UNAUTHENTICATED
+            correlationId: 11111111-1111-4111-8111-111111111111
+    Error403:
+      description: Недостаточно прав
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://pet-care.example/problems/403
+            title: Недостаточно прав
+            status: 403
+            detail: Недостаточно прав
+            code: FORBIDDEN
+            correlationId: 11111111-1111-4111-8111-111111111111
+    Error404:
+      description: Объект не найден
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://pet-care.example/problems/404
+            title: Объект не найден
+            status: 404
+            detail: Объект не найден
+            code: NOT_FOUND
+            correlationId: 11111111-1111-4111-8111-111111111111
+    Error409:
+      description: Конфликт состояния или ключа
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://pet-care.example/problems/409
+            title: Конфликт состояния или ключа
+            status: 409
+            detail: Конфликт состояния или ключа
+            code: CONFLICT
+            correlationId: 11111111-1111-4111-8111-111111111111
+    Error503:
+      description: Зависимость временно недоступна
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://pet-care.example/problems/503
+            title: Зависимость временно недоступна
+            status: 503
+            detail: Зависимость временно недоступна
+            code: DEPENDENCY_UNAVAILABLE
+            correlationId: 11111111-1111-4111-8111-111111111111
