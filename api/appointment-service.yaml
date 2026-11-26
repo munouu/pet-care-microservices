@@ -2,40 +2,30 @@ openapi: 3.0.3
 info:
   title: appointment-service
   version: 1.0.0
-  description: Оркестратор саги. OWNER видит свои записи, VET — назначенные, CLINIC_ADMIN — записи одной клиники.
-    Сумма и время — снимок schedule.
+  description: Записи на приём, предоплата и компенсации. Состояние оплаты обновляется по событиям.
 servers:
 - url: https://api.pet-care.example
   description: API Gateway
-security:
-- userJwt: []
+- url: http://localhost:8080
+  description: Локальный Gateway
 tags:
-- name: public
-  description: Клиент через Gateway
-- name: internal
-  description: Внутренняя сеть, service JWT
-- name: webhook
-  description: Подписанный callback PSP
+- {name: public, description: Клиент через Gateway}
+- {name: internal, description: 'Внутренняя сеть, service JWT'}
 paths:
   /api/v1/appointments:
     post:
-      tags:
-      - public
+      tags: [public]
       operationId: appointment_service_post_api_v1_appointments
-      summary: Начать запись
-      description: 'Доступ: OWNER. Проверить ownerId через pet-service, сохранить PREPARING и ключ. Сумма не
-        принимается от клиента. GET возвращает актуальный статус и ссылку.'
+      summary: Создать запись и платёжную сессию
+      description: OWNER. Проверить владельца, сохранить PREPARING, зарезервировать слот, создать платёжную
+        сессию. При успехе вернуть 201 PENDING_PAYMENT и paymentUrl. При сбое освободить резерв и отменить
+        платёж; повтор с тем же ключом не создаёт вторую запись.
       security:
       - userJwt: []
+      - mockUserId: []
+        mockRole: []
       parameters:
-      - name: Idempotency-Key
-        in: header
-        required: true
-        schema:
-          type: string
-          format: uuid
-        example: 11111111-1111-4111-8111-111111111111
-        description: Ключ одной логической операции; повтор с другим телом — 409.
+      - {$ref: '#/components/parameters/IdempotencyKey'}
       requestBody:
         required: true
         content:
@@ -43,97 +33,62 @@ paths:
             schema:
               type: object
               properties:
-                petId:
-                  type: string
-                  format: uuid
-                slotId:
-                  type: string
-                  format: uuid
-              required:
-              - petId
-              - slotId
+                petId: {type: string, format: uuid}
+                slotId: {type: string, format: uuid}
+              required: [petId, slotId]
               additionalProperties: false
             example:
               petId: 22222222-2222-4222-8222-222222222222
               slotId: 55555555-5555-4555-8555-555555555555
       responses:
-        '202':
-          description: Принято в обработку
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
+        '201':
+          description: Запись создана, ожидает оплаты
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Appointment'
+              schema: {$ref: '#/components/schemas/Appointment'}
               example:
                 id: 33333333-3333-4333-8333-333333333333
                 petId: 22222222-2222-4222-8222-222222222222
                 slotId: 55555555-5555-4555-8555-555555555555
                 ownerId: 11111111-1111-4111-8111-111111111111
-                vetId: null
-                startAt: null
-                amountKopecks: null
-                status: PREPARING
-                paymentStatus: NOT_STARTED
-                paymentUrl: null
-                expiresAt: null
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+                vetId: 44444444-4444-4444-8444-444444444444
+                startAt: '2027-01-15T10:00:00Z'
+                amountKopecks: 150000
+                status: PENDING_PAYMENT
+                paymentStatus: PENDING
+                paymentUrl: https://pay.example/session/123
+                expiresAt: '2027-01-15T09:15:00Z'
     get:
-      tags:
-      - public
+      tags: [public]
       operationId: appointment_service_get_api_v1_appointments
       summary: Список доступных записей
       description: 'Доступ: OWNER / VET / CLINIC_ADMIN. Фильтр по роли и владельцу/ветеринару; сортировка id.'
       security:
       - userJwt: []
+      - mockUserId: []
+        mockRole: []
       parameters:
       - name: status
         in: query
         required: false
         schema:
           type: string
-          enum:
-          - PREPARING
-          - PENDING_PAYMENT
-          - CONFIRMING
-          - CONFIRMED
-          - CANCELLING
-          - CANCELLED
-          - COMPLETED
+          enum: [PREPARING, PENDING_PAYMENT, CONFIRMING, CONFIRMED, CANCELLING, CANCELLED, COMPLETED]
         example: CONFIRMED
-      - name: page
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          default: 1
-        example: 1
-      - name: size
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          maximum: 100
-          default: 20
-        example: 20
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
       responses:
         '200':
           description: Успешно
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/AppointmentPage'
+              schema: {$ref: '#/components/schemas/AppointmentPage'}
               example:
                 items:
                 - id: 33333333-3333-4333-8333-333333333333
@@ -150,43 +105,35 @@ paths:
                 page: 1
                 size: 20
                 total: 1
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
   /api/v1/appointments/{appointmentId}:
     get:
-      tags:
-      - public
+      tags: [public]
       operationId: appointment_service_get_api_v1_appointments_appointmentId
       summary: Статус записи
       description: 'Доступ: OWNER / VET / CLINIC_ADMIN. Ссылка оплаты только владельцу при PENDING_PAYMENT.
         Для отменённых записей доступна проекция статуса возврата.'
       security:
       - userJwt: []
+      - mockUserId: []
+        mockRole: []
       parameters:
       - name: appointmentId
         in: path
         required: true
-        schema:
-          type: string
-          format: uuid
+        schema: {type: string, format: uuid}
         example: 33333333-3333-4333-8333-333333333333
       responses:
         '200':
           description: Успешно
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Appointment'
+              schema: {$ref: '#/components/schemas/Appointment'}
               example:
                 id: 33333333-3333-4333-8333-333333333333
                 petId: 22222222-2222-4222-8222-222222222222
@@ -199,51 +146,36 @@ paths:
                 paymentStatus: PENDING
                 paymentUrl: https://pay.example/session/123
                 expiresAt: '2027-01-15T09:15:00Z'
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
   /api/v1/appointments/{appointmentId}/cancellation:
     put:
-      tags:
-      - public
+      tags: [public]
       operationId: appointment_service_put_api_v1_appointments_appointmentId_cancellation
       summary: Запросить отмену
-      description: 'Доступ: OWNER / CLINIC_ADMIN. До начала визита, COMPLETED не отменяется. PREPARING без
-        известного времени можно отменить. Полный возврат при списании. 202 не означает возврат денег.'
+      description: OWNER или CLINIC_ADMIN. До начала визита. Принять отмену, закрыть платёж и освободить слот;
+        вернуть 202. Статус можно проверить GET.
       security:
       - userJwt: []
+      - mockUserId: []
+        mockRole: []
       parameters:
       - name: appointmentId
         in: path
         required: true
-        schema:
-          type: string
-          format: uuid
+        schema: {type: string, format: uuid}
         example: 33333333-3333-4333-8333-333333333333
-      - name: Idempotency-Key
-        in: header
-        required: true
-        schema:
-          type: string
-          format: uuid
-        example: 11111111-1111-4111-8111-111111111111
-        description: Ключ одной логической операции; повтор с другим телом — 409.
+      - {$ref: '#/components/parameters/IdempotencyKey'}
       responses:
         '202':
           description: Принято в обработку
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Appointment'
+              schema: {$ref: '#/components/schemas/Appointment'}
               example:
                 id: 33333333-3333-4333-8333-333333333333
                 petId: 22222222-2222-4222-8222-222222222222
@@ -256,50 +188,35 @@ paths:
                 paymentStatus: CANCELLATION_PENDING
                 paymentUrl: null
                 expiresAt: '2027-01-15T09:15:00Z'
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
   /api/v1/appointments/{appointmentId}/completion:
     put:
-      tags:
-      - public
+      tags: [public]
       operationId: appointment_service_put_api_v1_appointments_appointmentId_completion
       summary: Завершить посещение
       description: 'Доступ: VET. Только назначенный врач, CONFIRMED и now >= startAt.'
       security:
       - userJwt: []
+      - mockUserId: []
+        mockRole: []
       parameters:
       - name: appointmentId
         in: path
         required: true
-        schema:
-          type: string
-          format: uuid
+        schema: {type: string, format: uuid}
         example: 33333333-3333-4333-8333-333333333333
-      - name: Idempotency-Key
-        in: header
-        required: true
-        schema:
-          type: string
-          format: uuid
-        example: 11111111-1111-4111-8111-111111111111
-        description: Ключ одной логической операции; повтор с другим телом — 409.
+      - {$ref: '#/components/parameters/IdempotencyKey'}
       responses:
         '200':
           description: Успешно
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Appointment'
+              schema: {$ref: '#/components/schemas/Appointment'}
               example:
                 id: 33333333-3333-4333-8333-333333333333
                 petId: 22222222-2222-4222-8222-222222222222
@@ -312,45 +229,35 @@ paths:
                 paymentStatus: PAID
                 paymentUrl: null
                 expiresAt: '2027-01-15T09:15:00Z'
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
   /internal/v1/appointments/{appointmentId}/access:
     get:
-      tags:
-      - internal
+      tags: [internal]
       operationId: appointment_service_get_internal_v1_appointments_appointmentId_access
       summary: Проверить доступ врача к пациенту
       description: 'Доступ: health-service. vetId проверен health-service по JWT. 403 для другого врача/отменённого
         визита; создание курса только для COMPLETED.'
       security:
       - serviceJwt: []
+      - mockService: []
       servers:
-      - url: http://appointment-service
+      - url: http://appointment:8003
         description: Внутренняя сеть
       parameters:
       - name: appointmentId
         in: path
         required: true
-        schema:
-          type: string
-          format: uuid
+        schema: {type: string, format: uuid}
         example: 33333333-3333-4333-8333-333333333333
       - name: vetId
         in: query
         required: true
-        schema:
-          type: string
-          format: uuid
+        schema: {type: string, format: uuid}
         example: 44444444-4444-4444-8444-444444444444
       responses:
         '200':
@@ -360,117 +267,63 @@ paths:
               schema:
                 type: object
                 properties:
-                  petId:
-                    type: string
-                    format: uuid
-                  ownerId:
-                    type: string
-                    format: uuid
+                  petId: {type: string, format: uuid}
+                  ownerId: {type: string, format: uuid}
                   status:
                     type: string
-                    enum:
-                    - CONFIRMED
-                    - COMPLETED
-                required:
-                - petId
-                - ownerId
-                - status
+                    enum: [CONFIRMED, COMPLETED]
+                required: [petId, ownerId, status]
                 additionalProperties: false
               example:
                 petId: 22222222-2222-4222-8222-222222222222
                 ownerId: 11111111-1111-4111-8111-111111111111
                 status: COMPLETED
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
 components:
   securitySchemes:
-    userJwt:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-    serviceJwt:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-    providerSignature:
+    userJwt: {type: http, scheme: bearer, bearerFormat: JWT}
+    serviceJwt: {type: http, scheme: bearer, bearerFormat: JWT}
+    mockUserId:
       type: apiKey
       in: header
-      name: X-Provider-Signature
+      name: X-User-Id
+      description: Локальная заглушка идентификатора пользователя
+    mockRole: {type: apiKey, in: header, name: X-Role, description: Локальная заглушка роли}
+    mockService:
+      type: apiKey
+      in: header
+      name: X-Service
+      description: Локальная заглушка service JWT
   schemas:
     Problem:
       type: object
       properties:
-        type:
-          type: string
-          format: uri
-        title:
-          type: string
-        status:
-          type: integer
-          minimum: 400
-          maximum: 599
-        detail:
-          type: string
-        code:
-          type: string
-        correlationId:
-          type: string
-          format: uuid
-      required:
-      - type
-      - title
-      - status
-      - detail
-      - code
-      - correlationId
+        type: {type: string, format: uri}
+        title: {type: string}
+        status: {type: integer, minimum: 400, maximum: 599}
+        detail: {type: string}
+        code: {type: string}
+        correlationId: {type: string, format: uuid}
+      required: [type, title, status, detail, code, correlationId]
       additionalProperties: false
     Appointment:
       type: object
       properties:
-        id:
-          type: string
-          format: uuid
-        petId:
-          type: string
-          format: uuid
-        slotId:
-          type: string
-          format: uuid
-        ownerId:
-          type: string
-          format: uuid
-        vetId:
-          type: string
-          format: uuid
-          nullable: true
-        startAt:
-          type: string
-          format: date-time
-          nullable: true
-        amountKopecks:
-          type: integer
-          minimum: 1
-          nullable: true
+        id: {type: string, format: uuid}
+        petId: {type: string, format: uuid}
+        slotId: {type: string, format: uuid}
+        ownerId: {type: string, format: uuid}
+        vetId: {type: string, format: uuid, nullable: true}
+        startAt: {type: string, format: date-time, nullable: true}
+        amountKopecks: {type: integer, minimum: 1, nullable: true}
         status:
           type: string
-          enum:
-          - PREPARING
-          - PENDING_PAYMENT
-          - CONFIRMING
-          - CONFIRMED
-          - CANCELLING
-          - CANCELLED
-          - COMPLETED
+          enum: [PREPARING, PENDING_PAYMENT, CONFIRMING, CONFIRMED, CANCELLING, CANCELLED, COMPLETED]
         paymentStatus:
           type: string
           enum:
@@ -482,14 +335,8 @@ components:
           - CANCELLED
           - REFUND_PENDING
           - REFUNDED
-        paymentUrl:
-          type: string
-          format: uri
-          nullable: true
-        expiresAt:
-          type: string
-          format: date-time
-          nullable: true
+        paymentUrl: {type: string, format: uri, nullable: true}
+        expiresAt: {type: string, format: date-time, nullable: true}
       required:
       - id
       - petId
@@ -508,132 +355,18 @@ components:
       properties:
         items:
           type: array
-          items:
-            $ref: '#/components/schemas/Appointment'
-        page:
-          type: integer
-          minimum: 1
-        size:
-          type: integer
-          minimum: 1
-          maximum: 100
-        total:
-          type: integer
-          minimum: 0
-      required:
-      - items
-      - page
-      - size
-      - total
-      additionalProperties: false
-    AppointmentConfirmed:
-      type: object
-      properties:
-        eventId:
-          type: string
-          format: uuid
-        eventType:
-          type: string
-          enum:
-          - appointment.confirmed
-        occurredAt:
-          type: string
-          format: date-time
-        schemaVersion:
-          type: integer
-          enum:
-          - 1
-        correlationId:
-          type: string
-          format: uuid
-        payload:
-          type: object
-          properties:
-            appointmentId:
-              type: string
-              format: uuid
-            ownerId:
-              type: string
-              format: uuid
-            petId:
-              type: string
-              format: uuid
-            vetId:
-              type: string
-              format: uuid
-            startAt:
-              type: string
-              format: date-time
-          required:
-          - appointmentId
-          - ownerId
-          - petId
-          - vetId
-          - startAt
-          additionalProperties: false
-      required:
-      - eventId
-      - eventType
-      - occurredAt
-      - schemaVersion
-      - correlationId
-      - payload
-      additionalProperties: false
-    AppointmentCancelled:
-      type: object
-      properties:
-        eventId:
-          type: string
-          format: uuid
-        eventType:
-          type: string
-          enum:
-          - appointment.cancelled
-        occurredAt:
-          type: string
-          format: date-time
-        schemaVersion:
-          type: integer
-          enum:
-          - 1
-        correlationId:
-          type: string
-          format: uuid
-        payload:
-          type: object
-          properties:
-            appointmentId:
-              type: string
-              format: uuid
-            ownerId:
-              type: string
-              format: uuid
-            petId:
-              type: string
-              format: uuid
-            reason:
-              type: string
-          required:
-          - appointmentId
-          - ownerId
-          - petId
-          - reason
-          additionalProperties: false
-      required:
-      - eventId
-      - eventType
-      - occurredAt
-      - schemaVersion
-      - correlationId
-      - payload
+          items: {$ref: '#/components/schemas/Appointment'}
+        page: {type: integer, minimum: 1}
+        size: {type: integer, minimum: 1, maximum: 100}
+        total: {type: integer, minimum: 0}
+      required: [items, page, size, total]
       additionalProperties: false
   responses:
     Error400:
       description: Некорректные параметры
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/400
             title: Некорректные параметры
@@ -645,8 +378,7 @@ components:
       description: Нет действительной аутентификации
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/401
             title: Нет действительной аутентификации
@@ -658,8 +390,7 @@ components:
       description: Недостаточно прав
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/403
             title: Недостаточно прав
@@ -671,8 +402,7 @@ components:
       description: Объект не найден
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/404
             title: Объект не найден
@@ -684,8 +414,7 @@ components:
       description: Конфликт состояния или ключа
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/409
             title: Конфликт состояния или ключа
@@ -697,8 +426,7 @@ components:
       description: Зависимость временно недоступна
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/503
             title: Зависимость временно недоступна
@@ -706,3 +434,23 @@ components:
             detail: Зависимость временно недоступна
             code: DEPENDENCY_UNAVAILABLE
             correlationId: 11111111-1111-4111-8111-111111111111
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: {type: string, format: uuid}
+      example: 11111111-1111-4111-8111-111111111111
+      description: Ключ одной логической операции; повтор с другим телом — 409.
+    Page:
+      name: page
+      in: query
+      required: false
+      schema: {type: integer, minimum: 1, default: 1}
+      example: 1
+    Size:
+      name: size
+      in: query
+      required: false
+      schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+      example: 20

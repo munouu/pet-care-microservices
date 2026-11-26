@@ -2,104 +2,69 @@ openapi: 3.0.3
 info:
   title: pet-service
   version: 1.0.0
-  description: Единственный источник владения. ownerId неизменяем и берётся из sub токена.
+  description: Профили, бытовые дела и календарь. OWNER работает только со своими питомцами.
 servers:
 - url: https://api.pet-care.example
   description: API Gateway
-security:
-- userJwt: []
+- url: http://localhost:8080
+  description: Локальный Gateway
 tags:
-- name: public
-  description: Клиент через Gateway
-- name: internal
-  description: Внутренняя сеть, service JWT
-- name: webhook
-  description: Подписанный callback PSP
+- {name: public, description: Клиент через Gateway}
+- {name: internal, description: 'Внутренняя сеть, service JWT'}
 paths:
   /api/v1/pets:
     post:
-      tags:
-      - public
+      tags: [public]
       operationId: pet_service_post_api_v1_pets
       summary: Создать питомца
       description: 'Доступ: OWNER. '
       security:
       - userJwt: []
+      - mockUserId: []
+        mockRole: []
       parameters:
-      - name: Idempotency-Key
-        in: header
-        required: true
-        schema:
-          type: string
-          format: uuid
-        example: 11111111-1111-4111-8111-111111111111
-        description: Ключ одной логической операции; повтор с другим телом — 409.
+      - {$ref: '#/components/parameters/IdempotencyKey'}
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/CreatePet'
-            example:
-              name: Барсик
-              species: CAT
+            schema: {$ref: '#/components/schemas/CreatePet'}
+            example: {name: Барсик, species: CAT}
       responses:
         '201':
           description: Создано
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Pet'
+              schema: {$ref: '#/components/schemas/Pet'}
               example:
                 id: 22222222-2222-4222-8222-222222222222
                 ownerId: 11111111-1111-4111-8111-111111111111
                 name: Барсик
                 species: CAT
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
     get:
-      tags:
-      - public
+      tags: [public]
       operationId: pet_service_get_api_v1_pets
       summary: Список своих питомцев
       description: 'Доступ: OWNER. '
       security:
       - userJwt: []
+      - mockUserId: []
+        mockRole: []
       parameters:
-      - name: page
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          default: 1
-        example: 1
-      - name: size
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          maximum: 100
-          default: 20
-        example: 20
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
       responses:
         '200':
           description: Успешно
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/PetPage'
+              schema: {$ref: '#/components/schemas/PetPage'}
               example:
                 items:
                 - id: 22222222-2222-4222-8222-222222222222
@@ -109,71 +74,57 @@ paths:
                 page: 1
                 size: 20
                 total: 1
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
   /api/v1/pets/{petId}:
     get:
-      tags:
-      - public
+      tags: [public]
       operationId: pet_service_get_api_v1_pets_petId
       summary: Получить профиль своего питомца
       description: 'Доступ: OWNER. '
       security:
       - userJwt: []
+      - mockUserId: []
+        mockRole: []
       parameters:
       - name: petId
         in: path
         required: true
-        schema:
-          type: string
-          format: uuid
+        schema: {type: string, format: uuid}
         example: 22222222-2222-4222-8222-222222222222
       responses:
         '200':
           description: Успешно
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Pet'
+              schema: {$ref: '#/components/schemas/Pet'}
               example:
                 id: 22222222-2222-4222-8222-222222222222
                 ownerId: 11111111-1111-4111-8111-111111111111
                 name: Барсик
                 species: CAT
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
   /internal/v1/access/check:
     post:
-      tags:
-      - internal
+      tags: [internal]
       operationId: pet_service_post_internal_v1_access_check
       summary: Проверить владельца
-      description: 'Доступ: care-service, health-service, appointment-service. ownerId проверен вызывающим
-        сервисом; при отказе не возвращать персональные данные.'
+      description: 'Доступ: health-service, appointment-service. ownerId проверен вызывающим сервисом. Ответ
+        allowed не раскрывает данные питомца.'
       security:
       - serviceJwt: []
+      - mockService: []
       servers:
-      - url: http://pet-service
+      - url: http://pet:8001
         description: Внутренняя сеть
       requestBody:
         required: true
@@ -182,15 +133,9 @@ paths:
             schema:
               type: object
               properties:
-                petId:
-                  type: string
-                  format: uuid
-                ownerId:
-                  type: string
-                  format: uuid
-              required:
-              - petId
-              - ownerId
+                petId: {type: string, format: uuid}
+                ownerId: {type: string, format: uuid}
+              required: [petId, ownerId]
               additionalProperties: false
             example:
               petId: 22222222-2222-4222-8222-222222222222
@@ -203,135 +148,305 @@ paths:
               schema:
                 type: object
                 properties:
-                  allowed:
-                    type: boolean
-                required:
-                - allowed
+                  allowed: {type: boolean}
+                required: [allowed]
                 additionalProperties: false
               example:
                 allowed: true
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
+  /api/v1/care/tasks:
+    post:
+      tags: [public]
+      operationId: pet_service_post_api_v1_pet_care_tasks
+      summary: Запланировать дело
+      description: 'Доступ: OWNER. Проверка принадлежности питомца выполняется в pet-service локально. '
+      security:
+      - userJwt: []
+      - mockUserId: []
+        mockRole: []
+      parameters:
+      - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateTask'}
+            example:
+              petId: 22222222-2222-4222-8222-222222222222
+              title: Кормление
+              scheduledAt: '2027-01-15T10:00:00Z'
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Task'}
+              example:
+                id: 66666666-6666-4666-8666-666666666666
+                petId: 22222222-2222-4222-8222-222222222222
+                title: Кормление
+                scheduledAt: '2027-01-15T10:00:00Z'
+                status: PENDING
+                completedAt: null
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
+    get:
+      tags: [public]
+      operationId: pet_service_get_api_v1_pet_care_tasks
+      summary: Список дел
+      description: 'Доступ: OWNER. Проверка принадлежности питомца выполняется в pet-service локально. '
+      security:
+      - userJwt: []
+      - mockUserId: []
+        mockRole: []
+      parameters:
+      - name: petId
+        in: query
+        required: true
+        schema: {type: string, format: uuid}
+        example: 22222222-2222-4222-8222-222222222222
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TaskPage'}
+              example:
+                items:
+                - id: 66666666-6666-4666-8666-666666666666
+                  petId: 22222222-2222-4222-8222-222222222222
+                  title: Кормление
+                  scheduledAt: '2027-01-15T10:00:00Z'
+                  status: PENDING
+                  completedAt: null
+                page: 1
+                size: 20
+                total: 1
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
+  /api/v1/care/tasks/{taskId}/completion:
+    put:
+      tags: [public]
+      operationId: pet_service_put_api_v1_pet_care_tasks_taskId_completion
+      summary: Отметить дело выполненным
+      description: 'Доступ: OWNER. Проверка принадлежности питомца выполняется в pet-service локально. '
+      security:
+      - userJwt: []
+      - mockUserId: []
+        mockRole: []
+      parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+        example: 66666666-6666-4666-8666-666666666666
+      - {$ref: '#/components/parameters/IdempotencyKey'}
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Task'}
+              example:
+                id: 66666666-6666-4666-8666-666666666666
+                petId: 22222222-2222-4222-8222-222222222222
+                title: Кормление
+                scheduledAt: '2027-01-15T10:00:00Z'
+                status: DONE
+                completedAt: '2027-01-15T10:00:00Z'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
+  /api/v1/calendar:
+    get:
+      tags: [public]
+      operationId: pet_service_get_api_v1_calendar
+      summary: Объединённый календарь
+      description: 'Доступ: OWNER. Проверка принадлежности питомца выполняется в pet-service локально. Медицинская
+        проекция обновляется событиями health-service.'
+      security:
+      - userJwt: []
+      - mockUserId: []
+        mockRole: []
+      parameters:
+      - name: petId
+        in: query
+        required: true
+        schema: {type: string, format: uuid}
+        example: 22222222-2222-4222-8222-222222222222
+      - name: from
+        in: query
+        required: true
+        schema: {type: string, format: date-time}
+        example: '2027-01-15T00:00:00Z'
+      - name: to
+        in: query
+        required: true
+        schema: {type: string, format: date-time}
+        example: '2027-01-16T00:00:00Z'
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CalendarPage'}
+              example:
+                items:
+                - id: 66666666-6666-4666-8666-666666666666
+                  kind: CARE
+                  title: Кормление
+                  scheduledAt: '2027-01-15T10:00:00Z'
+                  status: PENDING
+                page: 1
+                size: 20
+                total: 1
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
 components:
   securitySchemes:
-    userJwt:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-    serviceJwt:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-    providerSignature:
+    userJwt: {type: http, scheme: bearer, bearerFormat: JWT}
+    serviceJwt: {type: http, scheme: bearer, bearerFormat: JWT}
+    mockUserId:
       type: apiKey
       in: header
-      name: X-Provider-Signature
+      name: X-User-Id
+      description: Локальная заглушка идентификатора пользователя
+    mockRole: {type: apiKey, in: header, name: X-Role, description: Локальная заглушка роли}
+    mockService:
+      type: apiKey
+      in: header
+      name: X-Service
+      description: Локальная заглушка service JWT
   schemas:
     Problem:
       type: object
       properties:
-        type:
-          type: string
-          format: uri
-        title:
-          type: string
-        status:
-          type: integer
-          minimum: 400
-          maximum: 599
-        detail:
-          type: string
-        code:
-          type: string
-        correlationId:
-          type: string
-          format: uuid
-      required:
-      - type
-      - title
-      - status
-      - detail
-      - code
-      - correlationId
+        type: {type: string, format: uri}
+        title: {type: string}
+        status: {type: integer, minimum: 400, maximum: 599}
+        detail: {type: string}
+        code: {type: string}
+        correlationId: {type: string, format: uuid}
+      required: [type, title, status, detail, code, correlationId]
       additionalProperties: false
     Pet:
       type: object
       properties:
-        id:
-          type: string
-          format: uuid
-        ownerId:
-          type: string
-          format: uuid
-        name:
-          type: string
+        id: {type: string, format: uuid}
+        ownerId: {type: string, format: uuid}
+        name: {type: string}
         species:
           type: string
-          enum:
-          - CAT
-          - DOG
-          - OTHER
-      required:
-      - id
-      - ownerId
-      - name
-      - species
+          enum: [CAT, DOG, OTHER]
+      required: [id, ownerId, name, species]
       additionalProperties: false
     CreatePet:
       type: object
       properties:
-        name:
-          type: string
+        name: {type: string}
         species:
           type: string
-          enum:
-          - CAT
-          - DOG
-          - OTHER
-      required:
-      - name
-      - species
+          enum: [CAT, DOG, OTHER]
+      required: [name, species]
       additionalProperties: false
     PetPage:
       type: object
       properties:
         items:
           type: array
-          items:
-            $ref: '#/components/schemas/Pet'
-        page:
-          type: integer
-          minimum: 1
-        size:
-          type: integer
-          minimum: 1
-          maximum: 100
-        total:
-          type: integer
-          minimum: 0
-      required:
-      - items
-      - page
-      - size
-      - total
+          items: {$ref: '#/components/schemas/Pet'}
+        page: {type: integer, minimum: 1}
+        size: {type: integer, minimum: 1, maximum: 100}
+        total: {type: integer, minimum: 0}
+      required: [items, page, size, total]
+      additionalProperties: false
+    Task:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        petId: {type: string, format: uuid}
+        title: {type: string}
+        scheduledAt: {type: string, format: date-time}
+        status:
+          type: string
+          enum: [PENDING, DONE]
+        completedAt: {type: string, format: date-time, nullable: true}
+      required: [id, petId, title, scheduledAt, status, completedAt]
+      additionalProperties: false
+    CreateTask:
+      type: object
+      properties:
+        petId: {type: string, format: uuid}
+        title: {type: string}
+        scheduledAt: {type: string, format: date-time}
+      required: [petId, title, scheduledAt]
+      additionalProperties: false
+    TaskPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Task'}
+        page: {type: integer, minimum: 1}
+        size: {type: integer, minimum: 1, maximum: 100}
+        total: {type: integer, minimum: 0}
+      required: [items, page, size, total]
+      additionalProperties: false
+    CalendarItem:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        kind:
+          type: string
+          enum: [CARE, MEDICATION]
+        title: {type: string}
+        scheduledAt: {type: string, format: date-time}
+        status:
+          type: string
+          enum: [PENDING, DONE, TAKEN, SKIPPED]
+      required: [id, kind, title, scheduledAt, status]
+      additionalProperties: false
+    CalendarPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/CalendarItem'}
+        page: {type: integer, minimum: 1}
+        size: {type: integer, minimum: 1, maximum: 100}
+        total: {type: integer, minimum: 0}
+      required: [items, page, size, total]
       additionalProperties: false
   responses:
     Error400:
       description: Некорректные параметры
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/400
             title: Некорректные параметры
@@ -343,8 +458,7 @@ components:
       description: Нет действительной аутентификации
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/401
             title: Нет действительной аутентификации
@@ -356,8 +470,7 @@ components:
       description: Недостаточно прав
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/403
             title: Недостаточно прав
@@ -369,8 +482,7 @@ components:
       description: Объект не найден
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/404
             title: Объект не найден
@@ -382,8 +494,7 @@ components:
       description: Конфликт состояния или ключа
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/409
             title: Конфликт состояния или ключа
@@ -395,8 +506,7 @@ components:
       description: Зависимость временно недоступна
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/503
             title: Зависимость временно недоступна
@@ -404,3 +514,23 @@ components:
             detail: Зависимость временно недоступна
             code: DEPENDENCY_UNAVAILABLE
             correlationId: 11111111-1111-4111-8111-111111111111
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: {type: string, format: uuid}
+      example: 11111111-1111-4111-8111-111111111111
+      description: Ключ одной логической операции; повтор с другим телом — 409.
+    Page:
+      name: page
+      in: query
+      required: false
+      schema: {type: integer, minimum: 1, default: 1}
+      example: 1
+    Size:
+      name: size
+      in: query
+      required: false
+      schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+      example: 20

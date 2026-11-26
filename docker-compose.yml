@@ -1,0 +1,182 @@
+x-common:
+  build: .
+  image: pet-care-services:local
+  environment: &id001
+    BROKER_URL: http://broker:8010
+    PSP_URL: http://psp:8011
+    FCM_URL: http://fcm:8012
+    PET_URL: http://pet:8001
+    SCHEDULE_URL: http://schedule:8002
+    APPOINTMENT_URL: http://appointment:8003
+    PAYMENT_URL: http://payment:8004
+    HEALTH_URL: http://health:8005
+    NOTIFICATION_URL: http://notification:8006
+    GATEWAY_URL: http://gateway:8080
+services:
+  broker:
+    build: .
+    image: pet-care-services:local
+    environment: *id001
+    command:
+    - python
+    - -m
+    - uvicorn
+    - mocks.broker.main:app
+    - --host
+    - 0.0.0.0
+    - --port
+    - '8010'
+    - --no-access-log
+  psp:
+    build: .
+    image: pet-care-services:local
+    environment: *id001
+    command:
+    - python
+    - -m
+    - uvicorn
+    - mocks.psp.main:app
+    - --host
+    - 0.0.0.0
+    - --port
+    - '8011'
+    - --no-access-log
+    volumes:
+    - psp_data:/data
+  fcm:
+    build: .
+    image: pet-care-services:local
+    environment: *id001
+    command:
+    - python
+    - -m
+    - uvicorn
+    - mocks.fcm.main:app
+    - --host
+    - 0.0.0.0
+    - --port
+    - '8012'
+    - --no-access-log
+    volumes:
+    - fcm_data:/data
+  pet:
+    build: .
+    image: pet-care-services:local
+    environment: *id001
+    command:
+    - python
+    - -m
+    - uvicorn
+    - services.pet.main:app
+    - --host
+    - 0.0.0.0
+    - --port
+    - '8001'
+    - --no-access-log
+    volumes:
+    - pet_data:/data
+  schedule:
+    build: .
+    image: pet-care-services:local
+    environment: *id001
+    command:
+    - python
+    - -m
+    - uvicorn
+    - services.schedule.main:app
+    - --host
+    - 0.0.0.0
+    - --port
+    - '8002'
+    - --no-access-log
+    volumes:
+    - schedule_data:/data
+  appointment:
+    build: .
+    image: pet-care-services:local
+    environment: *id001
+    command:
+    - python
+    - -m
+    - uvicorn
+    - services.appointment.main:app
+    - --host
+    - 0.0.0.0
+    - --port
+    - '8003'
+    - --no-access-log
+    volumes:
+    - appointment_data:/data
+  payment:
+    build: .
+    image: pet-care-services:local
+    environment: *id001
+    command:
+    - python
+    - -m
+    - uvicorn
+    - services.payment.main:app
+    - --host
+    - 0.0.0.0
+    - --port
+    - '8004'
+    - --no-access-log
+    volumes:
+    - payment_data:/data
+  health:
+    build: .
+    image: pet-care-services:local
+    environment: *id001
+    command:
+    - python
+    - -m
+    - uvicorn
+    - services.health.main:app
+    - --host
+    - 0.0.0.0
+    - --port
+    - '8005'
+    - --no-access-log
+    volumes:
+    - health_data:/data
+  notification:
+    build: .
+    image: pet-care-services:local
+    environment: *id001
+    command:
+    - python
+    - -m
+    - uvicorn
+    - services.notification.main:app
+    - --host
+    - 0.0.0.0
+    - --port
+    - '8006'
+    - --no-access-log
+    volumes:
+    - notification_data:/data
+  gateway:
+    build: .
+    image: pet-care-services:local
+    environment: *id001
+    command:
+    - python
+    - -m
+    - uvicorn
+    - gateway.main:app
+    - --host
+    - 0.0.0.0
+    - --port
+    - '8080'
+    - --no-access-log
+    ports:
+    - 127.0.0.1:8080:8080
+volumes:
+  psp_data: null
+  fcm_data: null
+  pet_data: null
+  schedule_data: null
+  appointment_data: null
+  payment_data: null
+  health_data: null
+  notification_data: null

@@ -1,0 +1,1381 @@
+{
+  "info": {
+    "_postman_id": "196b86fb-4871-41e3-9cce-c1709fe1621e",
+    "name": "Pet Care — ЛР4",
+    "description": "Запросы через Gateway. Папки 0–2 — основная демонстрация; 3–4 — дополнительные функции. Выполнять запросы вручную сверху вниз.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Подготовка",
+      "item": [
+        {
+          "name": "Gateway health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = Date.now();",
+                  "pm.environment.set(\"rangeFrom\", new Date(base).toISOString());",
+                  "pm.environment.set(\"rangeTo\", new Date(base + 4*3600000).toISOString());",
+                  "pm.environment.set(\"happyStart\", new Date(base + 3600000).toISOString());",
+                  "pm.environment.set(\"happyEnd\", new Date(base + 5400000).toISOString());",
+                  "pm.environment.set(\"failStart\", new Date(base + 7200000).toISOString());",
+                  "pm.environment.set(\"failEnd\", new Date(base + 9000000).toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"Gateway UP\", () => pm.expect(data.status).to.eql(\"UP\"));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Создать питомца",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pets",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Барсик\",\n  \"species\": \"CAT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  pm.environment.set(\"petId\", data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Зарегистрировать устройство",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/device",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pushToken\": \"pet-care-postman-token\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Создать слот для успеха",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "CLINIC_ADMIN"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/slots",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vetId\": \"{{vetId}}\",\n  \"startAt\": \"{{happyStart}}\",\n  \"endAt\": \"{{happyEnd}}\",\n  \"feeKopecks\": 150000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  pm.environment.set(\"happySlotId\", data.id);",
+                  "  pm.test(\"status = FREE\", () => pm.expect(data.status).to.eql(\"FREE\"));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Создать слот для отказа",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "CLINIC_ADMIN"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/slots",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vetId\": \"{{vetId}}\",\n  \"startAt\": \"{{failStart}}\",\n  \"endAt\": \"{{failEnd}}\",\n  \"feeKopecks\": 150000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  pm.environment.set(\"failSlotId\", data.id);",
+                  "  pm.test(\"status = FREE\", () => pm.expect(data.status).to.eql(\"FREE\"));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Свободные слоты",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/slots?from={{rangeFrom}}&to={{rangeTo}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"Оба слота свободны\", () => { const ids = data.items.map(x => x.id); pm.expect(ids).to.include(pm.environment.get(\"happySlotId\")); pm.expect(ids).to.include(pm.environment.get(\"failSlotId\")); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "1. Успешная запись",
+      "item": [
+        {
+          "name": "Создать запись",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{happyKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/appointments",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"petId\": \"{{petId}}\",\n  \"slotId\": \"{{happySlotId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"happyKey\", pm.variables.replaceIn(\"{{$guid}}\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  pm.environment.set(\"happyAppointmentId\", data.id);",
+                  "  pm.test(\"status = PENDING_PAYMENT\", () => pm.expect(data.status).to.eql(\"PENDING_PAYMENT\"));",
+                  "  pm.environment.set(\"happyAppointmentIdCorrelation\", pm.response.headers.get(\"X-Correlation-Id\"));",
+                  "  pm.test(\"paymentUrl получен\", () => pm.expect(data.paymentUrl).to.be.a(\"string\"));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Повторить тот же POST",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{happyKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/appointments",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"petId\": \"{{petId}}\",\n  \"slotId\": \"{{happySlotId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"Тот же appointmentId\", () => pm.expect(data.id).to.eql(pm.environment.get(\"happyAppointmentId\")));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Оплата успешна",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/mock/payments/{{happyAppointmentId}}/result",
+            "description": "Мок PSP отправит подписанный webhook через Gateway.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SUCCEEDED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"status = SUCCEEDED\", () => pm.expect(data.status).to.eql(\"SUCCEEDED\"));",
+                  "  pm.test(\"Callback принят\", () => pm.expect(data.callbackStatus).to.eql(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Проверить CONFIRMED",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/appointments/{{happyAppointmentId}}",
+            "description": "Если событие ещё в очереди, повторить запрос через 1–3 секунды."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"status = CONFIRMED\", () => pm.expect(data.status).to.eql(\"CONFIRMED\"));",
+                  "  pm.test(\"paymentStatus = PAID\", () => pm.expect(data.paymentStatus).to.eql(\"PAID\"));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Слот больше не свободен",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/slots?from={{rangeFrom}}&to={{rangeTo}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"Слот отсутствует в свободных\", () => pm.expect(data.items.map(x => x.id)).not.to.include(pm.environment.get(\"happySlotId\")));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Уведомления",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/notifications",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"Подтверждение отправлено\", () => pm.expect(data.items.some(x => x.kind === \"APPOINTMENT_CONFIRMED\" && x.status === \"SENT\")).to.eql(true));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Отказ оплаты",
+      "item": [
+        {
+          "name": "Создать вторую запись",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/appointments",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"petId\": \"{{petId}}\",\n  \"slotId\": \"{{failSlotId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  pm.environment.set(\"failAppointmentId\", data.id);",
+                  "  pm.test(\"status = PENDING_PAYMENT\", () => pm.expect(data.status).to.eql(\"PENDING_PAYMENT\"));",
+                  "  pm.environment.set(\"failAppointmentIdCorrelation\", pm.response.headers.get(\"X-Correlation-Id\"));",
+                  "  pm.test(\"paymentUrl получен\", () => pm.expect(data.paymentUrl).to.be.a(\"string\"));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Оплата отклонена",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/mock/payments/{{failAppointmentId}}/result",
+            "description": "Мок PSP отправит подписанный webhook через Gateway.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"FAILED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"status = FAILED\", () => pm.expect(data.status).to.eql(\"FAILED\"));",
+                  "  pm.test(\"Callback принят\", () => pm.expect(data.callbackStatus).to.eql(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Проверить CANCELLED",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/appointments/{{failAppointmentId}}",
+            "description": "Если событие ещё в очереди, повторить запрос через 1–3 секунды."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"status = CANCELLED\", () => pm.expect(data.status).to.eql(\"CANCELLED\"));",
+                  "  pm.test(\"paymentStatus = FAILED\", () => pm.expect(data.paymentStatus).to.eql(\"FAILED\"));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Проверить освобождение слота",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/slots?from={{rangeFrom}}&to={{rangeTo}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"Слот снова свободен\", () => pm.expect(data.items.map(x => x.id)).to.include(pm.environment.get(\"failSlotId\")));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Уведомления об отмене",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/notifications",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"Отмена отправлена\", () => pm.expect(data.items.some(x => x.kind === \"APPOINTMENT_CANCELLED\" && x.status === \"SENT\")).to.eql(true));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Уход и доступ",
+      "item": [
+        {
+          "name": "Запланировать кормление",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/care/tasks",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"petId\": \"{{petId}}\",\n  \"title\": \"Кормление\",\n  \"scheduledAt\": \"{{taskAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"taskAt\", new Date(Date.now()+3600000).toISOString());",
+                  "pm.environment.set(\"calFrom\", new Date(Date.now()-60000).toISOString());",
+                  "pm.environment.set(\"calTo\", new Date(Date.now()+3*86400000).toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  pm.environment.set(\"taskId\", data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Отметить выполнение",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/care/tasks/{{taskId}}/completion",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"status = DONE\", () => pm.expect(data.status).to.eql(\"DONE\"));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Календарь",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/calendar?petId={{petId}}&from={{calFrom}}&to={{calTo}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"Дело выполнено\", () => pm.expect(data.items.some(x => x.id === pm.environment.get(\"taskId\") && x.status === \"DONE\")).to.eql(true));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Чужой питомец — 403",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{otherOwnerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pets/{{petId}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "if (pm.response.code === 403) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"Problem Details\", () => { pm.expect(data.code).to.eql(\"FORBIDDEN\"); pm.expect(data.correlationId).to.be.a(\"string\"); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Назначение",
+      "item": [
+        {
+          "name": "Создать слот (начало через 60 сек)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "CLINIC_ADMIN"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/slots",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vetId\": \"{{vetId}}\",\n  \"startAt\": \"{{visitStart}}\",\n  \"endAt\": \"{{visitEnd}}\",\n  \"feeKopecks\": 150000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const t=Date.now();",
+                  "pm.environment.set(\"visitStart\",new Date(t+60000).toISOString());",
+                  "pm.environment.set(\"visitEnd\",new Date(t+1800000).toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  pm.environment.set(\"visitSlotId\", data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Записаться на приём",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/appointments",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"petId\": \"{{petId}}\",\n  \"slotId\": \"{{visitSlotId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  pm.environment.set(\"visitAppointmentId\", data.id);",
+                  "  pm.test(\"status = PENDING_PAYMENT\", () => pm.expect(data.status).to.eql(\"PENDING_PAYMENT\"));",
+                  "  pm.environment.set(\"visitAppointmentIdCorrelation\", pm.response.headers.get(\"X-Correlation-Id\"));",
+                  "  pm.test(\"paymentUrl получен\", () => pm.expect(data.paymentUrl).to.be.a(\"string\"));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Оплатить приём",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/mock/payments/{{visitAppointmentId}}/result",
+            "description": "Мок PSP отправит подписанный webhook через Gateway.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SUCCEEDED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"status = SUCCEEDED\", () => pm.expect(data.status).to.eql(\"SUCCEEDED\"));",
+                  "  pm.test(\"Callback принят\", () => pm.expect(data.callbackStatus).to.eql(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Проверить запись",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/appointments/{{visitAppointmentId}}",
+            "description": "Если событие ещё в очереди, повторить запрос через 1–3 секунды."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"status = CONFIRMED\", () => pm.expect(data.status).to.eql(\"CONFIRMED\"));",
+                  "  pm.test(\"paymentStatus = PAID\", () => pm.expect(data.paymentStatus).to.eql(\"PAID\"));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Завершить визит (после visitStart)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{vetId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "VET"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/appointments/{{visitAppointmentId}}/completion",
+            "description": "Нужно дождаться времени начала слота, иначе вернётся 409."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"status = COMPLETED\", () => pm.expect(data.status).to.eql(\"COMPLETED\"));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Оформить назначение",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{vetId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "VET"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/health/courses",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appointmentId\": \"{{visitAppointmentId}}\",\n  \"medication\": \"Препарат по назначению\",\n  \"dose\": \"По назначению врача\",\n  \"firstDoseAt\": \"{{doseAt}}\",\n  \"intervalHours\": 24,\n  \"doseCount\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"doseAt\",new Date(Date.now()+300000).toISOString());",
+                  "pm.environment.set(\"calFrom\",new Date(Date.now()-60000).toISOString());",
+                  "pm.environment.set(\"calTo\",new Date(Date.now()+3*86400000).toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  pm.environment.set(\"courseId\", data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Расписание приёмов",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/health/courses/{{courseId}}/occurrences",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"Два приёма\", () => pm.expect(data.total).to.eql(2));",
+                  "  if (data.items.length) pm.environment.set(\"occurrenceId\",data.items[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Отметить приём лекарства",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/health/occurrences/{{occurrenceId}}/completion",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"TAKEN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"status = TAKEN\", () => pm.expect(data.status).to.eql(\"TAKEN\"));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Календарь с медицинской проекцией",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{ownerId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "OWNER"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/calendar?petId={{petId}}&from={{calFrom}}&to={{calTo}}",
+            "description": "Повторить GET, если асинхронная проекция ещё не обновилась."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"Отметка в календаре\", () => pm.expect(data.items.some(x => x.id === pm.environment.get(\"occurrenceId\") && x.status === \"TAKEN\")).to.eql(true));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "История назначений для врача",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{vetId}}"
+              },
+              {
+                "key": "X-Role",
+                "value": "VET"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/health/visits/{{visitAppointmentId}}/courses",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.test(\"Назначение доступно врачу\", () => pm.expect(data.items.some(x => x.id === pm.environment.get(\"courseId\"))).to.eql(true));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    }
+  ]
+}

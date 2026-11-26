@@ -2,43 +2,31 @@ openapi: 3.0.3
 info:
   title: payment-service
   version: 1.0.0
-  description: Собственная попытка платежа и возврат. Подпись callback, проверка суммы, уникальность appointmentId
-    и providerEventId.
+  description: Предоплата, callback, отмена и возврат.
 servers:
 - url: https://api.pet-care.example
   description: API Gateway
-security:
-- userJwt: []
+- url: http://localhost:8080
+  description: Локальный Gateway
 tags:
-- name: public
-  description: Клиент через Gateway
-- name: internal
-  description: Внутренняя сеть, service JWT
-- name: webhook
-  description: Подписанный callback PSP
+- {name: internal, description: 'Внутренняя сеть, service JWT'}
+- {name: webhook, description: Подписанный callback PSP}
 paths:
   /internal/v1/payments:
     post:
-      tags:
-      - internal
+      tags: [internal]
       operationId: payment_service_post_internal_v1_payments
       summary: Создать платёжную сессию
-      description: 'Доступ: appointment-service. Сохранить намерение до PSP, стабильный ключ провайдера appointmentId.
-        Сверять неизвестный результат. Tombstone отмены запрещает поздний POST.'
+      description: 'Доступ: appointment-service. Сохранить платёж до вызова PSP; повтор с appointmentId не
+        создаёт вторую сессию. Отменённая попытка не создаётся заново.'
       security:
       - serviceJwt: []
+      - mockService: []
       servers:
-      - url: http://payment-service
+      - url: http://payment:8004
         description: Внутренняя сеть
       parameters:
-      - name: Idempotency-Key
-        in: header
-        required: true
-        schema:
-          type: string
-          format: uuid
-        example: 11111111-1111-4111-8111-111111111111
-        description: Ключ одной логической операции; повтор с другим телом — 409.
+      - {$ref: '#/components/parameters/IdempotencyKey'}
       requestBody:
         required: true
         content:
@@ -46,24 +34,13 @@ paths:
             schema:
               type: object
               properties:
-                appointmentId:
-                  type: string
-                  format: uuid
-                amountKopecks:
-                  type: integer
-                  minimum: 1
+                appointmentId: {type: string, format: uuid}
+                amountKopecks: {type: integer, minimum: 1}
                 currency:
                   type: string
-                  enum:
-                  - RUB
-                expiresAt:
-                  type: string
-                  format: date-time
-              required:
-              - appointmentId
-              - amountKopecks
-              - currency
-              - expiresAt
+                  enum: [RUB]
+                expiresAt: {type: string, format: date-time}
+              required: [appointmentId, amountKopecks, currency, expiresAt]
               additionalProperties: false
             example:
               appointmentId: 33333333-3333-4333-8333-333333333333
@@ -75,8 +52,7 @@ paths:
           description: Создано
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Payment'
+              schema: {$ref: '#/components/schemas/Payment'}
               example:
                 id: 88888888-8888-4888-8888-888888888888
                 appointmentId: 33333333-3333-4333-8333-333333333333
@@ -84,48 +60,33 @@ paths:
                 currency: RUB
                 status: INITIATED
                 paymentUrl: https://pay.example/session/123
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
   /internal/v1/payments/{appointmentId}/cancellation:
     put:
-      tags:
-      - internal
+      tags: [internal]
       operationId: payment_service_put_internal_v1_payments_appointmentId_cancellation
       summary: Отменить сессию или вернуть платёж
-      description: 'Доступ: appointment-service. Долговечное намерение отмены. При списании полный возврат,
-        иначе отмена сессии. Позднее списание также возвращается. Если попытки нет, сохраняется tombstone.
+      description: 'Доступ: appointment-service. Сохранённое намерение отмены. При списании полный возврат,
+        иначе отмена сессии. Позднее списание также возвращается. Если попытки нет, сохраняется отметка отмены.
         202 означает принятую ответственность, не возврат.'
       security:
       - serviceJwt: []
+      - mockService: []
       servers:
-      - url: http://payment-service
+      - url: http://payment:8004
         description: Внутренняя сеть
       parameters:
       - name: appointmentId
         in: path
         required: true
-        schema:
-          type: string
-          format: uuid
+        schema: {type: string, format: uuid}
         example: 33333333-3333-4333-8333-333333333333
-      - name: Idempotency-Key
-        in: header
-        required: true
-        schema:
-          type: string
-          format: uuid
-        example: 11111111-1111-4111-8111-111111111111
-        description: Ключ одной логической операции; повтор с другим телом — 409.
+      - {$ref: '#/components/parameters/IdempotencyKey'}
       responses:
         '202':
           description: Принято в обработку
@@ -134,53 +95,42 @@ paths:
               schema:
                 type: object
                 properties:
-                  ok:
-                    type: boolean
-                required:
-                - ok
+                  ok: {type: boolean}
+                required: [ok]
                 additionalProperties: false
               example:
                 ok: true
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
   /internal/v1/payments/{appointmentId}:
     get:
-      tags:
-      - internal
+      tags: [internal]
       operationId: payment_service_get_internal_v1_payments_appointmentId
       summary: Проверить состояние платежа
-      description: 'Доступ: appointment-service. Авторитетный статус, результат сверки с PSP. 404 если попытки
-        ещё нет.'
+      description: 'Доступ: appointment-service. Текущий статус, сохранённый по результатам операций и callback
+        PSP.'
       security:
       - serviceJwt: []
+      - mockService: []
       servers:
-      - url: http://payment-service
+      - url: http://payment:8004
         description: Внутренняя сеть
       parameters:
       - name: appointmentId
         in: path
         required: true
-        schema:
-          type: string
-          format: uuid
+        schema: {type: string, format: uuid}
         example: 33333333-3333-4333-8333-333333333333
       responses:
         '200':
           description: Успешно
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Payment'
+              schema: {$ref: '#/components/schemas/Payment'}
               example:
                 id: 88888888-8888-4888-8888-888888888888
                 appointmentId: 33333333-3333-4333-8333-333333333333
@@ -188,27 +138,19 @@ paths:
                 currency: RUB
                 status: INITIATED
                 paymentUrl: https://pay.example/session/123
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
   /webhooks/payments:
     post:
-      tags:
-      - webhook
+      tags: [webhook]
       operationId: payment_service_post_webhooks_payments
       summary: Принять подписанный callback PSP
-      description: 'Доступ: PSP. Условный учебный протокол. Проверить HMAC сырого тела, связать providerPaymentId,
-        appointmentId и сумму; дедупликация providerEventId; спорные результаты сверять, финальные статусы
-        не понижать.'
+      description: 'Доступ: PSP. HMAC сырого тела, проверка providerPaymentId, appointmentId и суммы, дедупликация
+        providerEventId. Финальный REFUNDED не понижается.'
       security:
       - providerSignature: []
       requestBody:
@@ -218,33 +160,17 @@ paths:
             schema:
               type: object
               properties:
-                providerEventId:
-                  type: string
-                providerPaymentId:
-                  type: string
-                appointmentId:
-                  type: string
-                  format: uuid
+                providerEventId: {type: string}
+                providerPaymentId: {type: string}
+                appointmentId: {type: string, format: uuid}
                 status:
                   type: string
-                  enum:
-                  - SUCCEEDED
-                  - FAILED
-                  - REFUNDED
-                amountKopecks:
-                  type: integer
-                  minimum: 1
+                  enum: [SUCCEEDED, FAILED, REFUNDED]
+                amountKopecks: {type: integer, minimum: 1}
                 currency:
                   type: string
-                  enum:
-                  - RUB
-              required:
-              - providerEventId
-              - providerPaymentId
-              - appointmentId
-              - status
-              - amountKopecks
-              - currency
+                  enum: [RUB]
+              required: [providerEventId, providerPaymentId, appointmentId, status, amountKopecks, currency]
               additionalProperties: false
             example:
               providerEventId: evt_001
@@ -261,245 +187,59 @@ paths:
               schema:
                 type: object
                 properties:
-                  ok:
-                    type: boolean
-                required:
-                - ok
+                  ok: {type: boolean}
+                required: [ok]
                 additionalProperties: false
               example:
                 ok: true
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
 components:
   securitySchemes:
-    userJwt:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-    serviceJwt:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-    providerSignature:
+    serviceJwt: {type: http, scheme: bearer, bearerFormat: JWT}
+    providerSignature: {type: apiKey, in: header, name: X-Provider-Signature}
+    mockService:
       type: apiKey
       in: header
-      name: X-Provider-Signature
+      name: X-Service
+      description: Локальная заглушка service JWT
   schemas:
     Problem:
       type: object
       properties:
-        type:
-          type: string
-          format: uri
-        title:
-          type: string
-        status:
-          type: integer
-          minimum: 400
-          maximum: 599
-        detail:
-          type: string
-        code:
-          type: string
-        correlationId:
-          type: string
-          format: uuid
-      required:
-      - type
-      - title
-      - status
-      - detail
-      - code
-      - correlationId
+        type: {type: string, format: uri}
+        title: {type: string}
+        status: {type: integer, minimum: 400, maximum: 599}
+        detail: {type: string}
+        code: {type: string}
+        correlationId: {type: string, format: uuid}
+      required: [type, title, status, detail, code, correlationId]
       additionalProperties: false
     Payment:
       type: object
       properties:
-        id:
-          type: string
-          format: uuid
-        appointmentId:
-          type: string
-          format: uuid
-        amountKopecks:
-          type: integer
-          minimum: 1
+        id: {type: string, format: uuid}
+        appointmentId: {type: string, format: uuid}
+        amountKopecks: {type: integer, minimum: 1}
         currency:
           type: string
-          enum:
-          - RUB
+          enum: [RUB]
         status:
           type: string
-          enum:
-          - INITIATED
-          - COMPLETED
-          - FAILED
-          - CANCELLED
-          - REFUND_PENDING
-          - REFUNDED
-        paymentUrl:
-          type: string
-          format: uri
-          nullable: true
-      required:
-      - id
-      - appointmentId
-      - amountKopecks
-      - currency
-      - status
-      - paymentUrl
-      additionalProperties: false
-    PaymentCompleted:
-      type: object
-      properties:
-        eventId:
-          type: string
-          format: uuid
-        eventType:
-          type: string
-          enum:
-          - payment.completed
-        occurredAt:
-          type: string
-          format: date-time
-        schemaVersion:
-          type: integer
-          enum:
-          - 1
-        correlationId:
-          type: string
-          format: uuid
-        payload:
-          type: object
-          properties:
-            appointmentId:
-              type: string
-              format: uuid
-            paymentId:
-              type: string
-              format: uuid
-            amountKopecks:
-              type: integer
-              minimum: 1
-          required:
-          - appointmentId
-          - paymentId
-          - amountKopecks
-          additionalProperties: false
-      required:
-      - eventId
-      - eventType
-      - occurredAt
-      - schemaVersion
-      - correlationId
-      - payload
-      additionalProperties: false
-    PaymentFailed:
-      type: object
-      properties:
-        eventId:
-          type: string
-          format: uuid
-        eventType:
-          type: string
-          enum:
-          - payment.failed
-        occurredAt:
-          type: string
-          format: date-time
-        schemaVersion:
-          type: integer
-          enum:
-          - 1
-        correlationId:
-          type: string
-          format: uuid
-        payload:
-          type: object
-          properties:
-            appointmentId:
-              type: string
-              format: uuid
-            paymentId:
-              type: string
-              format: uuid
-            reason:
-              type: string
-          required:
-          - appointmentId
-          - paymentId
-          - reason
-          additionalProperties: false
-      required:
-      - eventId
-      - eventType
-      - occurredAt
-      - schemaVersion
-      - correlationId
-      - payload
-      additionalProperties: false
-    PaymentRefunded:
-      type: object
-      properties:
-        eventId:
-          type: string
-          format: uuid
-        eventType:
-          type: string
-          enum:
-          - payment.refunded
-        occurredAt:
-          type: string
-          format: date-time
-        schemaVersion:
-          type: integer
-          enum:
-          - 1
-        correlationId:
-          type: string
-          format: uuid
-        payload:
-          type: object
-          properties:
-            appointmentId:
-              type: string
-              format: uuid
-            paymentId:
-              type: string
-              format: uuid
-            amountKopecks:
-              type: integer
-              minimum: 1
-          required:
-          - appointmentId
-          - paymentId
-          - amountKopecks
-          additionalProperties: false
-      required:
-      - eventId
-      - eventType
-      - occurredAt
-      - schemaVersion
-      - correlationId
-      - payload
+          enum: [INITIATED, COMPLETED, FAILED, CANCELLED, REFUND_PENDING, REFUNDED]
+        paymentUrl: {type: string, format: uri, nullable: true}
+      required: [id, appointmentId, amountKopecks, currency, status, paymentUrl]
       additionalProperties: false
   responses:
     Error400:
       description: Некорректные параметры
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/400
             title: Некорректные параметры
@@ -511,8 +251,7 @@ components:
       description: Нет действительной аутентификации
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/401
             title: Нет действительной аутентификации
@@ -524,8 +263,7 @@ components:
       description: Недостаточно прав
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/403
             title: Недостаточно прав
@@ -537,8 +275,7 @@ components:
       description: Объект не найден
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/404
             title: Объект не найден
@@ -550,8 +287,7 @@ components:
       description: Конфликт состояния или ключа
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/409
             title: Конфликт состояния или ключа
@@ -563,8 +299,7 @@ components:
       description: Зависимость временно недоступна
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/503
             title: Зависимость временно недоступна
@@ -572,3 +307,11 @@ components:
             detail: Зависимость временно недоступна
             code: DEPENDENCY_UNAVAILABLE
             correlationId: 11111111-1111-4111-8111-111111111111
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: {type: string, format: uuid}
+      example: 11111111-1111-4111-8111-111111111111
+      description: Ключ одной логической операции; повтор с другим телом — 409.

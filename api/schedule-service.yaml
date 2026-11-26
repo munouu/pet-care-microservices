@@ -2,46 +2,34 @@ openapi: 3.0.3
 info:
   title: schedule-service
   version: 1.0.0
-  description: Непересекающиеся интервалы врача и конкурентное резервирование. Слот принадлежит максимум одной
-    действующей записи.
+  description: Свободные слоты и резервы на 15 минут.
 servers:
 - url: https://api.pet-care.example
   description: API Gateway
-security:
-- userJwt: []
+- url: http://localhost:8080
+  description: Локальный Gateway
 tags:
-- name: public
-  description: Клиент через Gateway
-- name: internal
-  description: Внутренняя сеть, service JWT
-- name: webhook
-  description: Подписанный callback PSP
+- {name: public, description: Клиент через Gateway}
+- {name: internal, description: 'Внутренняя сеть, service JWT'}
 paths:
   /api/v1/admin/slots:
     post:
-      tags:
-      - public
+      tags: [public]
       operationId: schedule_service_post_api_v1_admin_slots
       summary: Создать слот врача
-      description: 'Доступ: CLINIC_ADMIN. Врач зарегистрирован; startAt в будущем, endAt > startAt, запрещено
-        пересечение слотов одного врача.'
+      description: CLINIC_ADMIN. Слоты врача не пересекаются; startAt в будущем, endAt позже startAt, цена
+        положительная.
       security:
       - userJwt: []
+      - mockUserId: []
+        mockRole: []
       parameters:
-      - name: Idempotency-Key
-        in: header
-        required: true
-        schema:
-          type: string
-          format: uuid
-        example: 11111111-1111-4111-8111-111111111111
-        description: Ключ одной логической операции; повтор с другим телом — 409.
+      - {$ref: '#/components/parameters/IdempotencyKey'}
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/CreateSlot'
+            schema: {$ref: '#/components/schemas/CreateSlot'}
             example:
               vetId: 44444444-4444-4444-8444-444444444444
               startAt: '2027-01-15T10:00:00Z'
@@ -52,8 +40,7 @@ paths:
           description: Создано
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Slot'
+              schema: {$ref: '#/components/schemas/Slot'}
               example:
                 id: 55555555-5555-4555-8555-555555555555
                 vetId: 44444444-4444-4444-8444-444444444444
@@ -61,73 +48,46 @@ paths:
                 endAt: '2027-01-15T10:30:00Z'
                 feeKopecks: 150000
                 status: FREE
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
   /api/v1/slots:
     get:
-      tags:
-      - public
+      tags: [public]
       operationId: schedule_service_get_api_v1_slots
       summary: Найти свободные слоты
       description: 'Доступ: OWNER. Только FREE, интервал [from,to), сортировка startAt,id.'
       security:
       - userJwt: []
+      - mockUserId: []
+        mockRole: []
       parameters:
       - name: vetId
         in: query
         required: false
-        schema:
-          type: string
-          format: uuid
+        schema: {type: string, format: uuid}
         example: 44444444-4444-4444-8444-444444444444
       - name: from
         in: query
         required: true
-        schema:
-          type: string
-          format: date-time
+        schema: {type: string, format: date-time}
         example: '2027-01-15T00:00:00Z'
       - name: to
         in: query
         required: true
-        schema:
-          type: string
-          format: date-time
+        schema: {type: string, format: date-time}
         example: '2027-01-16T00:00:00Z'
-      - name: page
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          default: 1
-        example: 1
-      - name: size
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          maximum: 100
-          default: 20
-        example: 20
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
       responses:
         '200':
           description: Успешно
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/SlotPage'
+              schema: {$ref: '#/components/schemas/SlotPage'}
               example:
                 items:
                 - id: 55555555-5555-4555-8555-555555555555
@@ -139,40 +99,27 @@ paths:
                 page: 1
                 size: 20
                 total: 1
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
   /internal/v1/reservations:
     post:
-      tags:
-      - internal
+      tags: [internal]
       operationId: schedule_service_post_internal_v1_reservations
       summary: Удержать слот
       description: 'Доступ: appointment-service. HELD до min(now+15 мин,startAt). Атомарно проверить FREE.
-        Повтор appointmentId не продлевает TTL; tombstone отмены блокирует поздний POST.'
+        Повтор appointmentId не продлевает TTL; отметка отмены отмены блокирует поздний POST.'
       security:
       - serviceJwt: []
+      - mockService: []
       servers:
-      - url: http://schedule-service
+      - url: http://schedule:8002
         description: Внутренняя сеть
       parameters:
-      - name: Idempotency-Key
-        in: header
-        required: true
-        schema:
-          type: string
-          format: uuid
-        example: 11111111-1111-4111-8111-111111111111
-        description: Ключ одной логической операции; повтор с другим телом — 409.
+      - {$ref: '#/components/parameters/IdempotencyKey'}
       requestBody:
         required: true
         content:
@@ -180,15 +127,9 @@ paths:
             schema:
               type: object
               properties:
-                slotId:
-                  type: string
-                  format: uuid
-                appointmentId:
-                  type: string
-                  format: uuid
-              required:
-              - slotId
-              - appointmentId
+                slotId: {type: string, format: uuid}
+                appointmentId: {type: string, format: uuid}
+              required: [slotId, appointmentId]
               additionalProperties: false
             example:
               slotId: 55555555-5555-4555-8555-555555555555
@@ -198,8 +139,7 @@ paths:
           description: Создано
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Reservation'
+              schema: {$ref: '#/components/schemas/Reservation'}
               example:
                 slotId: 55555555-5555-4555-8555-555555555555
                 appointmentId: 33333333-3333-4333-8333-333333333333
@@ -208,54 +148,38 @@ paths:
                 feeKopecks: 150000
                 expiresAt: '2027-01-15T09:15:00Z'
                 status: HELD
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
   /internal/v1/reservations/{appointmentId}/confirmation:
     put:
-      tags:
-      - internal
+      tags: [internal]
       operationId: schedule_service_put_internal_v1_reservations_appointmentId_confirmation
       summary: Подтвердить резерв
       description: 'Доступ: appointment-service. HELD → BOOKED до expiresAt. Повтор BOOKED безопасен; EXPIRED/RELEASED
         — 409.'
       security:
       - serviceJwt: []
+      - mockService: []
       servers:
-      - url: http://schedule-service
+      - url: http://schedule:8002
         description: Внутренняя сеть
       parameters:
       - name: appointmentId
         in: path
         required: true
-        schema:
-          type: string
-          format: uuid
+        schema: {type: string, format: uuid}
         example: 33333333-3333-4333-8333-333333333333
-      - name: Idempotency-Key
-        in: header
-        required: true
-        schema:
-          type: string
-          format: uuid
-        example: 11111111-1111-4111-8111-111111111111
-        description: Ключ одной логической операции; повтор с другим телом — 409.
+      - {$ref: '#/components/parameters/IdempotencyKey'}
       responses:
         '200':
           description: Успешно
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Reservation'
+              schema: {$ref: '#/components/schemas/Reservation'}
               example:
                 slotId: 55555555-5555-4555-8555-555555555555
                 appointmentId: 33333333-3333-4333-8333-333333333333
@@ -264,47 +188,32 @@ paths:
                 feeKopecks: 150000
                 expiresAt: '2027-01-15T09:15:00Z'
                 status: BOOKED
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
   /internal/v1/reservations/{appointmentId}:
     delete:
-      tags:
-      - internal
+      tags: [internal]
       operationId: schedule_service_delete_internal_v1_reservations_appointmentId
       summary: Освободить резерв
-      description: 'Доступ: appointment-service. Освобождает только собственный HELD/BOOKED. Сохраняет tombstone
-        даже при отсутствии резерва. Не освобождает бронь другой записи.'
+      description: 'Доступ: appointment-service. Освобождает только собственный HELD/BOOKED. Сохраняет отметка
+        отмены даже при отсутствии резерва. Не освобождает бронь другой записи.'
       security:
       - serviceJwt: []
+      - mockService: []
       servers:
-      - url: http://schedule-service
+      - url: http://schedule:8002
         description: Внутренняя сеть
       parameters:
       - name: appointmentId
         in: path
         required: true
-        schema:
-          type: string
-          format: uuid
+        schema: {type: string, format: uuid}
         example: 33333333-3333-4333-8333-333333333333
-      - name: Idempotency-Key
-        in: header
-        required: true
-        schema:
-          type: string
-          format: uuid
-        example: 11111111-1111-4111-8111-111111111111
-        description: Ключ одной логической операции; повтор с другим телом — 409.
+      - {$ref: '#/components/parameters/IdempotencyKey'}
       responses:
         '200':
           description: Успешно
@@ -313,228 +222,97 @@ paths:
               schema:
                 type: object
                 properties:
-                  ok:
-                    type: boolean
-                required:
-                - ok
+                  ok: {type: boolean}
+                required: [ok]
                 additionalProperties: false
               example:
                 ok: true
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
 components:
   securitySchemes:
-    userJwt:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-    serviceJwt:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-    providerSignature:
+    userJwt: {type: http, scheme: bearer, bearerFormat: JWT}
+    serviceJwt: {type: http, scheme: bearer, bearerFormat: JWT}
+    mockUserId:
       type: apiKey
       in: header
-      name: X-Provider-Signature
+      name: X-User-Id
+      description: Локальная заглушка идентификатора пользователя
+    mockRole: {type: apiKey, in: header, name: X-Role, description: Локальная заглушка роли}
+    mockService:
+      type: apiKey
+      in: header
+      name: X-Service
+      description: Локальная заглушка service JWT
   schemas:
     Problem:
       type: object
       properties:
-        type:
-          type: string
-          format: uri
-        title:
-          type: string
-        status:
-          type: integer
-          minimum: 400
-          maximum: 599
-        detail:
-          type: string
-        code:
-          type: string
-        correlationId:
-          type: string
-          format: uuid
-      required:
-      - type
-      - title
-      - status
-      - detail
-      - code
-      - correlationId
+        type: {type: string, format: uri}
+        title: {type: string}
+        status: {type: integer, minimum: 400, maximum: 599}
+        detail: {type: string}
+        code: {type: string}
+        correlationId: {type: string, format: uuid}
+      required: [type, title, status, detail, code, correlationId]
       additionalProperties: false
     Slot:
       type: object
       properties:
-        id:
-          type: string
-          format: uuid
-        vetId:
-          type: string
-          format: uuid
-        startAt:
-          type: string
-          format: date-time
-        endAt:
-          type: string
-          format: date-time
-        feeKopecks:
-          type: integer
-          minimum: 1
+        id: {type: string, format: uuid}
+        vetId: {type: string, format: uuid}
+        startAt: {type: string, format: date-time}
+        endAt: {type: string, format: date-time}
+        feeKopecks: {type: integer, minimum: 1}
         status:
           type: string
-          enum:
-          - FREE
-          - HELD
-          - BOOKED
-      required:
-      - id
-      - vetId
-      - startAt
-      - endAt
-      - feeKopecks
-      - status
+          enum: [FREE, HELD, BOOKED]
+      required: [id, vetId, startAt, endAt, feeKopecks, status]
       additionalProperties: false
     CreateSlot:
       type: object
       properties:
-        vetId:
-          type: string
-          format: uuid
-        startAt:
-          type: string
-          format: date-time
-        endAt:
-          type: string
-          format: date-time
-        feeKopecks:
-          type: integer
-          minimum: 1
-      required:
-      - vetId
-      - startAt
-      - endAt
-      - feeKopecks
+        vetId: {type: string, format: uuid}
+        startAt: {type: string, format: date-time}
+        endAt: {type: string, format: date-time}
+        feeKopecks: {type: integer, minimum: 1}
+      required: [vetId, startAt, endAt, feeKopecks]
       additionalProperties: false
     SlotPage:
       type: object
       properties:
         items:
           type: array
-          items:
-            $ref: '#/components/schemas/Slot'
-        page:
-          type: integer
-          minimum: 1
-        size:
-          type: integer
-          minimum: 1
-          maximum: 100
-        total:
-          type: integer
-          minimum: 0
-      required:
-      - items
-      - page
-      - size
-      - total
+          items: {$ref: '#/components/schemas/Slot'}
+        page: {type: integer, minimum: 1}
+        size: {type: integer, minimum: 1, maximum: 100}
+        total: {type: integer, minimum: 0}
+      required: [items, page, size, total]
       additionalProperties: false
     Reservation:
       type: object
       properties:
-        slotId:
-          type: string
-          format: uuid
-        appointmentId:
-          type: string
-          format: uuid
-        vetId:
-          type: string
-          format: uuid
-        startAt:
-          type: string
-          format: date-time
-        feeKopecks:
-          type: integer
-          minimum: 1
-        expiresAt:
-          type: string
-          format: date-time
+        slotId: {type: string, format: uuid}
+        appointmentId: {type: string, format: uuid}
+        vetId: {type: string, format: uuid}
+        startAt: {type: string, format: date-time}
+        feeKopecks: {type: integer, minimum: 1}
+        expiresAt: {type: string, format: date-time}
         status:
           type: string
-          enum:
-          - HELD
-          - BOOKED
-          - RELEASED
-          - EXPIRED
-      required:
-      - slotId
-      - appointmentId
-      - vetId
-      - startAt
-      - feeKopecks
-      - expiresAt
-      - status
-      additionalProperties: false
-    SlotExpired:
-      type: object
-      properties:
-        eventId:
-          type: string
-          format: uuid
-        eventType:
-          type: string
-          enum:
-          - slot.expired
-        occurredAt:
-          type: string
-          format: date-time
-        schemaVersion:
-          type: integer
-          enum:
-          - 1
-        correlationId:
-          type: string
-          format: uuid
-        payload:
-          type: object
-          properties:
-            appointmentId:
-              type: string
-              format: uuid
-            slotId:
-              type: string
-              format: uuid
-          required:
-          - appointmentId
-          - slotId
-          additionalProperties: false
-      required:
-      - eventId
-      - eventType
-      - occurredAt
-      - schemaVersion
-      - correlationId
-      - payload
+          enum: [HELD, BOOKED, RELEASED, EXPIRED]
+      required: [slotId, appointmentId, vetId, startAt, feeKopecks, expiresAt, status]
       additionalProperties: false
   responses:
     Error400:
       description: Некорректные параметры
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/400
             title: Некорректные параметры
@@ -546,8 +324,7 @@ components:
       description: Нет действительной аутентификации
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/401
             title: Нет действительной аутентификации
@@ -559,8 +336,7 @@ components:
       description: Недостаточно прав
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/403
             title: Недостаточно прав
@@ -572,8 +348,7 @@ components:
       description: Объект не найден
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/404
             title: Объект не найден
@@ -585,8 +360,7 @@ components:
       description: Конфликт состояния или ключа
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/409
             title: Конфликт состояния или ключа
@@ -598,8 +372,7 @@ components:
       description: Зависимость временно недоступна
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/503
             title: Зависимость временно недоступна
@@ -607,3 +380,23 @@ components:
             detail: Зависимость временно недоступна
             code: DEPENDENCY_UNAVAILABLE
             correlationId: 11111111-1111-4111-8111-111111111111
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: {type: string, format: uuid}
+      example: 11111111-1111-4111-8111-111111111111
+      description: Ключ одной логической операции; повтор с другим телом — 409.
+    Page:
+      name: page
+      in: query
+      required: false
+      schema: {type: integer, minimum: 1, default: 1}
+      example: 1
+    Size:
+      name: size
+      in: query
+      required: false
+      schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+      example: 20

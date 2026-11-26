@@ -2,38 +2,27 @@ openapi: 3.0.3
 info:
   title: notification-service
   version: 1.0.0
-  description: Push о записях и лекарствах. Один текущий токен пользователя; SENT — принятие FCM, не прочтение.
+  description: Устройства и история push-уведомлений.
 servers:
 - url: https://api.pet-care.example
   description: API Gateway
-security:
-- userJwt: []
+- url: http://localhost:8080
+  description: Локальный Gateway
 tags:
-- name: public
-  description: Клиент через Gateway
-- name: internal
-  description: Внутренняя сеть, service JWT
-- name: webhook
-  description: Подписанный callback PSP
+- {name: public, description: Клиент через Gateway}
 paths:
   /api/v1/device:
     put:
-      tags:
-      - public
+      tags: [public]
       operationId: notification_service_put_api_v1_device
       summary: Зарегистрировать текущее устройство
       description: 'Доступ: OWNER. Upsert по sub, токен уникален.'
       security:
       - userJwt: []
+      - mockUserId: []
+        mockRole: []
       parameters:
-      - name: Idempotency-Key
-        in: header
-        required: true
-        schema:
-          type: string
-          format: uuid
-        example: 11111111-1111-4111-8111-111111111111
-        description: Ключ одной логической операции; повтор с другим телом — 409.
+      - {$ref: '#/components/parameters/IdempotencyKey'}
       requestBody:
         required: true
         content:
@@ -41,10 +30,8 @@ paths:
             schema:
               type: object
               properties:
-                pushToken:
-                  type: string
-              required:
-              - pushToken
+                pushToken: {type: string}
+              required: [pushToken]
               additionalProperties: false
             example:
               pushToken: example-fcm-token
@@ -56,59 +43,36 @@ paths:
               schema:
                 type: object
                 properties:
-                  ok:
-                    type: boolean
-                required:
-                - ok
+                  ok: {type: boolean}
+                required: [ok]
                 additionalProperties: false
               example:
                 ok: true
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
   /api/v1/notifications:
     get:
-      tags:
-      - public
+      tags: [public]
       operationId: notification_service_get_api_v1_notifications
       summary: История уведомлений владельца
       description: 'Доступ: OWNER. Только свои записи, сортировка scheduledAt,id.'
       security:
       - userJwt: []
+      - mockUserId: []
+        mockRole: []
       parameters:
-      - name: page
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          default: 1
-        example: 1
-      - name: size
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          maximum: 100
-          default: 20
-        example: 20
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
       responses:
         '200':
           description: Успешно
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/NotificationPage'
+              schema: {$ref: '#/components/schemas/NotificationPage'}
               example:
                 items:
                 - id: 66666666-6666-4666-8666-666666666666
@@ -118,118 +82,63 @@ paths:
                 page: 1
                 size: 20
                 total: 1
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '503':
-          $ref: '#/components/responses/Error503'
+        '400': {$ref: '#/components/responses/Error400'}
+        '401': {$ref: '#/components/responses/Error401'}
+        '403': {$ref: '#/components/responses/Error403'}
+        '404': {$ref: '#/components/responses/Error404'}
+        '409': {$ref: '#/components/responses/Error409'}
+        '503': {$ref: '#/components/responses/Error503'}
 components:
   securitySchemes:
-    userJwt:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-    serviceJwt:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-    providerSignature:
+    userJwt: {type: http, scheme: bearer, bearerFormat: JWT}
+    mockUserId:
       type: apiKey
       in: header
-      name: X-Provider-Signature
+      name: X-User-Id
+      description: Локальная заглушка идентификатора пользователя
+    mockRole: {type: apiKey, in: header, name: X-Role, description: Локальная заглушка роли}
   schemas:
     Problem:
       type: object
       properties:
-        type:
-          type: string
-          format: uri
-        title:
-          type: string
-        status:
-          type: integer
-          minimum: 400
-          maximum: 599
-        detail:
-          type: string
-        code:
-          type: string
-        correlationId:
-          type: string
-          format: uuid
-      required:
-      - type
-      - title
-      - status
-      - detail
-      - code
-      - correlationId
+        type: {type: string, format: uri}
+        title: {type: string}
+        status: {type: integer, minimum: 400, maximum: 599}
+        detail: {type: string}
+        code: {type: string}
+        correlationId: {type: string, format: uuid}
+      required: [type, title, status, detail, code, correlationId]
       additionalProperties: false
     Notification:
       type: object
       properties:
-        id:
-          type: string
-          format: uuid
+        id: {type: string, format: uuid}
         kind:
           type: string
-          enum:
-          - APPOINTMENT_CONFIRMED
-          - APPOINTMENT_CANCELLED
-          - MEDICATION
-        scheduledAt:
-          type: string
-          format: date-time
+          enum: [APPOINTMENT_CONFIRMED, APPOINTMENT_CANCELLED, MEDICATION]
+        scheduledAt: {type: string, format: date-time}
         status:
           type: string
-          enum:
-          - PENDING
-          - SENT
-          - FAILED
-          - CANCELLED
-      required:
-      - id
-      - kind
-      - scheduledAt
-      - status
+          enum: [PENDING, SENT, FAILED, CANCELLED]
+      required: [id, kind, scheduledAt, status]
       additionalProperties: false
     NotificationPage:
       type: object
       properties:
         items:
           type: array
-          items:
-            $ref: '#/components/schemas/Notification'
-        page:
-          type: integer
-          minimum: 1
-        size:
-          type: integer
-          minimum: 1
-          maximum: 100
-        total:
-          type: integer
-          minimum: 0
-      required:
-      - items
-      - page
-      - size
-      - total
+          items: {$ref: '#/components/schemas/Notification'}
+        page: {type: integer, minimum: 1}
+        size: {type: integer, minimum: 1, maximum: 100}
+        total: {type: integer, minimum: 0}
+      required: [items, page, size, total]
       additionalProperties: false
   responses:
     Error400:
       description: Некорректные параметры
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/400
             title: Некорректные параметры
@@ -241,8 +150,7 @@ components:
       description: Нет действительной аутентификации
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/401
             title: Нет действительной аутентификации
@@ -254,8 +162,7 @@ components:
       description: Недостаточно прав
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/403
             title: Недостаточно прав
@@ -267,8 +174,7 @@ components:
       description: Объект не найден
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/404
             title: Объект не найден
@@ -280,8 +186,7 @@ components:
       description: Конфликт состояния или ключа
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/409
             title: Конфликт состояния или ключа
@@ -293,8 +198,7 @@ components:
       description: Зависимость временно недоступна
       content:
         application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+          schema: {$ref: '#/components/schemas/Problem'}
           example:
             type: https://pet-care.example/problems/503
             title: Зависимость временно недоступна
@@ -302,3 +206,23 @@ components:
             detail: Зависимость временно недоступна
             code: DEPENDENCY_UNAVAILABLE
             correlationId: 11111111-1111-4111-8111-111111111111
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: {type: string, format: uuid}
+      example: 11111111-1111-4111-8111-111111111111
+      description: Ключ одной логической операции; повтор с другим телом — 409.
+    Page:
+      name: page
+      in: query
+      required: false
+      schema: {type: integer, minimum: 1, default: 1}
+      example: 1
+    Size:
+      name: size
+      in: query
+      required: false
+      schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+      example: 20
